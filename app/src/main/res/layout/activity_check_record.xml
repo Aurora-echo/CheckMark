@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- 事项名称标题 -->
+    <TextView
+        android:id="@+id/tv_task_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:gravity="center"
+        android:layout_marginBottom="24dp"/>
+
+    <!-- 日历统计视图 -->
+    <com.prolificinteractive.materialcalendarview.MaterialCalendarView
+        android:id="@+id/calendarView"
+        android:layout_width="match_parent"
+        android:layout_height="300dp"
+        app:mcv_showOtherDates="all"
+        app:mcv_selectionColor="@color/colorPrimary"
+        app:mcv_tileSize="36dp"
+        app:mcv_arrowColor="@color/colorPrimary"
+        android:layout_marginBottom="24dp"
+        tools:ignore="MissingClass" />
+
+    <!-- 圆形记录按钮 -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center">
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/fab_record"
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:src="@drawable/ic_check"
+            app:backgroundTint="@color/colorAccent"
+            app:rippleColor="@color/colorPrimaryDark"
+            app:elevation="8dp"
+            app:pressedTranslationZ="12dp"
+            android:contentDescription="记录事项完成"/>
+    </FrameLayout>
+
+</LinearLayout>
