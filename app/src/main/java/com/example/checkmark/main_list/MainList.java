@@ -8,20 +8,22 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
 import android.widget.ImageButton;
 import android.widget.Toast;
 
 import com.example.checkmark.R;
-import com.example.checkmark.main_list.CheckItem;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 import java.lang.reflect.Type;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
+import com.example.checkmark.main_list.Reminder.ReminderService;
 import add_check.Add_Check;
 import check_record.CheckRecord;
 
@@ -32,16 +34,18 @@ public class MainList extends AppCompatActivity {
     private SharedPreferences sp;
     private static final String SP_NAME = "CheckListInfo";
     private static final String TASKS_KEY = "tasks";
-    private static final String TAG = "Log--------->>>>";
+    private static final String TAG = "Log.MainList--------->>>>";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main_list);
 
+        // 初始化提醒服务
+        ReminderService.scheduleDailyCheck(this);
+
         // 初始化SharedPreferences
         sp = getSharedPreferences(SP_NAME, MODE_PRIVATE);
-
         // 从SP加载数据
         loadTasksFromSharedPreferences();
 
@@ -60,13 +64,11 @@ public class MainList extends AppCompatActivity {
 
             @Override
             public void onStatusClick(int position) {
-                Toast.makeText(MainList.this, "点击了第 " + (position + 1) + " 项的图标", Toast.LENGTH_SHORT).show();
-                // 切换完成状态
-                //CheckItem item = CheckList.get(position);
-                //item.setCompleted(!item.isCompleted());
-                //CheckAdapter.notifyItemChanged(position);
-                // 更新SP中的完成状态
-                //updateCompletionStatusInSP(position, item.isCompleted());
+                if (CheckList.get(position).isCompleted()) {
+                    Toast.makeText(MainList.this, "当日已完成~", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(MainList.this, "今天还没完成哦~", Toast.LENGTH_SHORT).show();
+                }
             }
         });
         recyclerView.setAdapter(CheckAdapter);
@@ -91,21 +93,37 @@ public class MainList extends AppCompatActivity {
 
     //从SP中读取数据方法
     private void loadTasksFromSharedPreferences() {
-        Log.i(TAG,"coming loadTasksFromSharedPreferences");
+        Log.i(TAG, "coming loadTasksFromSharedPreferences");
         CheckList.clear();
         String tasksJson = sp.getString(TASKS_KEY, "[]");
         Log.d(TAG, "从SP读取的原始JSON: " + tasksJson);
         Type type = new TypeToken<List<Map<String, Object>>>(){}.getType();
         List<Map<String, Object>> tasks = new Gson().fromJson(tasksJson, type);
 
+        // 获取今天的日期字符串（格式与completionRecords中的一致）
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+        String today = sdf.format(new Date());
+
         for (Map<String, Object> task : tasks) {
             String name = (String) task.get("name");
-            boolean isCompleted = task.containsKey("isCompleted") && (boolean) task.get("isCompleted");
-            Log.d(TAG, "加载任务 - 名称: " + name + ", 状态: " + isCompleted);
-            CheckList.add(new CheckItem(name, isCompleted));
+            List<String> records = (List<String>) task.get("completionRecords");
+
+            // 检查是否有当天的完成记录
+            boolean isCompletedToday = false;
+            if (records != null) {
+                for (String record : records) {
+                    if (record.startsWith(today)) {
+                        isCompletedToday = true;
+                        break;
+                    }
+                }
+            }
+            Log.d(TAG, "加载任务-名称: " + name + ", 今日完成状态: " + isCompletedToday);
+            CheckList.add(new CheckItem(name, isCompletedToday));
         }
     }
 
+    //更新状态图标的方法  暂时不需要了  不可以在这个页面调节，这个页面只能看！！！！
     private void updateCompletionStatusInSP(int position, boolean isCompleted) {
         String tasksJson = sp.getString(TASKS_KEY, "[]");
         Type type = new TypeToken<List<Map<String, Object>>>(){}.getType();

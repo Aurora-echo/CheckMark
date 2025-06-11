@@ -38,6 +38,7 @@ public class Add_Check extends AppCompatActivity {
     private SharedPreferences sp;
     private static final String SP_NAME = "CheckListInfo";
     private static final String TASKS_KEY = "tasks";
+    private static final String TAG = "Log.Add_Check--------->>>>";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

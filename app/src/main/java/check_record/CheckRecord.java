@@ -2,6 +2,7 @@ package check_record;
 
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
@@ -36,6 +37,7 @@ public class CheckRecord extends AppCompatActivity {
     private int taskPosition;
     private Set<CalendarDay> completedDates = new HashSet<>();
     private SharedPreferences sp;
+    private static final String TAG = "Log.CheckRecord--------->>>>";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,6 +79,7 @@ public class CheckRecord extends AppCompatActivity {
     }
 
     private void loadCompletedDates() {
+        Log.i(TAG, "loadCompletedDates: " + taskPosition);
         // 直接读取SP文件
         String tasksJson = sp.getString("tasks", "[]");
         Type type = new TypeToken<List<Map<String, Object>>>(){}.getType();
@@ -88,16 +91,14 @@ public class CheckRecord extends AppCompatActivity {
 
             if (records != null) {
                 SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
-
                 for (String record : records) {
                     try {
                         Date date = sdf.parse(record);
                         Calendar calendar = Calendar.getInstance();
                         calendar.setTime(date);
-
                         completedDates.add(CalendarDay.from(
                                 calendar.get(Calendar.YEAR),
-                                calendar.get(Calendar.MONTH), // 已经是从0开始
+                                calendar.get(Calendar.MONTH),
                                 calendar.get(Calendar.DAY_OF_MONTH)
                         ));
                     } catch (Exception e) {
@@ -113,10 +114,8 @@ public class CheckRecord extends AppCompatActivity {
         CalendarDay today = CalendarDay.today();
         if (!completedDates.contains(today)) {
             completedDates.add(today);
-
             // 使用Add_Check中的方法更新记录
             Add_Check.addCompletionRecord(sp, taskPosition);
-
             calendarView.invalidateDecorators();
             Toast.makeText(this, "已记录完成", Toast.LENGTH_SHORT).show();
         } else {
