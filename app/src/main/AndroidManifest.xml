@@ -1,10 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- 精简后的权限列表 -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
         android:allowBackup="true"
@@ -16,23 +20,28 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.CheckMark"
         tools:targetApi="31">
+
         <activity
             android:name="check_record.CheckRecord"
             android:exported="false" />
+
         <activity
             android:name="add_check.Add_Check"
             android:exported="false" />
+
         <activity
             android:name=".main_list.MainList"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
-        <receiver android:name="com.example.checkmark.main_list.Reminder.ReminderService"
+        <!-- 合并后的Receiver声明 -->
+        <receiver
+            android:name=".main_list.Reminder.ReminderService"
+            android:enabled="true"
             android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
@@ -40,6 +49,11 @@
             </intent-filter>
         </receiver>
 
-    </application>
+        <service
+            android:name=".main_list.Reminder.ReminderForegroundService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="specialUse" />
 
+    </application>
 </manifest>

@@ -33,6 +33,7 @@ public class CheckRecord extends AppCompatActivity {
 
     private MaterialCalendarView calendarView;
     private FloatingActionButton fabRecord;
+    private int taskid;
     private String taskName;
     private int taskPosition;
     private Set<CalendarDay> completedDates = new HashSet<>();
@@ -50,6 +51,8 @@ public class CheckRecord extends AppCompatActivity {
         // 获取传递的事项信息
         taskPosition = getIntent().getIntExtra("position", -1);
         taskName = getIntent().getStringExtra("taskName");
+        taskid = getIntent().getIntExtra("id",-1);
+        Log.i(TAG, "intent获取的数据，taskPosition："+taskPosition+",taskName:"+taskName+"taskid:"+taskid);
 
         TextView tvTaskName = findViewById(R.id.tv_task_name);
         tvTaskName.setText(taskName);
@@ -59,12 +62,14 @@ public class CheckRecord extends AppCompatActivity {
         loadCompletedDates();
     }
 
+    //初始化日历识图
     private void initCalendarView() {
         calendarView = findViewById(R.id.calendarView);
         calendarView.setSelectionMode(MaterialCalendarView.SELECTION_MODE_NONE);
         calendarView.addDecorator(new CompletedDateDecorator());
     }
 
+    // 初始化完成记录按钮
     private void initRecordButton() {
         fabRecord = findViewById(R.id.fab_record);
 
@@ -78,35 +83,52 @@ public class CheckRecord extends AppCompatActivity {
         });
     }
 
+    // 从SP文件中加载数据
     private void loadCompletedDates() {
-        Log.i(TAG, "loadCompletedDates: " + taskPosition);
+        Log.i(TAG, "开始根据taskid加载数据: " + taskid);
         // 直接读取SP文件
         String tasksJson = sp.getString("tasks", "[]");
         Type type = new TypeToken<List<Map<String, Object>>>(){}.getType();
         List<Map<String, Object>> tasks = new Gson().fromJson(tasksJson, type);
 
-        if (taskPosition >= 0 && taskPosition < tasks.size()) {
-            Map<String, Object> task = tasks.get(taskPosition);
-            List<String> records = (List<String>) task.get("completionRecords");
+        // 通过taskid查找任务，而不是position
+        boolean found = false;
+        for (Map<String, Object> task : tasks) {
+            // 修复：先获取Double，再转为int
+            Object idObj = task.get("id");
+            int checkid = idObj instanceof Double
+                    ? ((Double) idObj).intValue()
+                    : (Integer) idObj;
 
-            if (records != null) {
-                SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
-                for (String record : records) {
-                    try {
-                        Date date = sdf.parse(record);
-                        Calendar calendar = Calendar.getInstance();
-                        calendar.setTime(date);
-                        completedDates.add(CalendarDay.from(
-                                calendar.get(Calendar.YEAR),
-                                calendar.get(Calendar.MONTH),
-                                calendar.get(Calendar.DAY_OF_MONTH)
-                        ));
-                    } catch (Exception e) {
-                        e.printStackTrace();
+            if (checkid == taskid) {
+                List<String> records = (List<String>) task.get("completionRecords");
+
+                if (records != null) {
+                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+                    for (String record : records) {
+                        try {
+                            Date date = sdf.parse(record);
+                            Calendar calendar = Calendar.getInstance();
+                            calendar.setTime(date);
+                            completedDates.add(CalendarDay.from(
+                                    calendar.get(Calendar.YEAR),
+                                    calendar.get(Calendar.MONTH),
+                                    calendar.get(Calendar.DAY_OF_MONTH)
+                            ));
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
                     }
                 }
+                found = true;
+                break;
             }
         }
+
+        if (!found) {
+            Log.w(TAG, "未找到ID为" + taskid + "的任务记录");
+        }
+
         calendarView.invalidateDecorators();
     }
 

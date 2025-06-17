@@ -1,6 +1,7 @@
 package add_check;
 
 import android.app.TimePickerDialog;
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
@@ -38,7 +39,7 @@ public class Add_Check extends AppCompatActivity {
     private SharedPreferences sp;
     private static final String SP_NAME = "CheckListInfo";
     private static final String TASKS_KEY = "tasks";
-    private static final String TAG = "Log.Add_Check--------->>>>";
+    private static final String TAG = "Log.Add_Check";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -103,6 +104,7 @@ public class Add_Check extends AppCompatActivity {
 
         // 创建任务对象
         Map<String, Object> task = new HashMap<>();
+        task.put("id",getNextTaskId(this));
         task.put("name", taskName);
         task.put("needsReminder", needsReminder);
         task.put("reminderTime", reminderTime);
@@ -152,4 +154,12 @@ public class Add_Check extends AppCompatActivity {
             sp.edit().putString(TASKS_KEY, new Gson().toJson(tasks)).apply();
         }
     }
+
+    public synchronized int getNextTaskId(Context context) {
+        SharedPreferences sp = context.getSharedPreferences("task_ids", MODE_PRIVATE);
+        int id = sp.getInt("last_id", 0) + 1;
+        sp.edit().putInt("last_id", id).apply();
+        return id;
+    }
+
 }
