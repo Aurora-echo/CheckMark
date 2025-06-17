@@ -44,7 +44,7 @@ public class CheckAdapter extends RecyclerView.Adapter<CheckAdapter.TodoViewHold
         Log.d(TAG, "绑定数据: " + item.getText() + ", 状态: " + item.isCompleted());
         holder.textView.setText(item.getText());
         holder.statusView.setImageResource(
-                item.isCompleted() ? R.drawable.ic_checked : R.drawable.ic_unchecked
+                item.isCompleted() ? R.drawable.ios_checkbox_checked : R.drawable.ios_checkbox_unchecked
         );
 
         // 整个项点击事件

@@ -20,25 +20,28 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.CheckMark"
         tools:targetApi="31">
+<!--        <meta-data-->
+<!--            android:name="com.google.android.actions"-->
+<!--            android:resource="@xml/ios_checkbox_color" />-->
 
+        <activity
+            android:name="checksetting.checksetting"
+            android:exported="false" />
         <activity
             android:name="check_record.CheckRecord"
             android:exported="false" />
-
         <activity
             android:name="add_check.Add_Check"
             android:exported="false" />
-
         <activity
             android:name=".main_list.MainList"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-        </activity>
-
-        <!-- 合并后的Receiver声明 -->
+        </activity> <!-- 合并后的Receiver声明 -->
         <receiver
             android:name=".main_list.Reminder.ReminderService"
             android:enabled="true"
@@ -55,5 +58,15 @@
             android:exported="false"
             android:foregroundServiceType="specialUse" />
 
+        <receiver android:name="LittleApp.TaskWidget" android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/task_widget_info" />
+        </receiver>
+
     </application>
+
 </manifest>

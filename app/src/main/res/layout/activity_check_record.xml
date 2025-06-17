@@ -5,31 +5,97 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:background="#F0F1F3"
+    android:paddingLeft="16dp"
+    android:paddingRight="16dp">
 
-    <!-- 事项名称标题 -->
-    <TextView
-        android:id="@+id/tv_task_name"
+    <!-- iOS风格设置按钮 -->
+    <Button
+        android:id="@+id/Check_Setting"
+        android:layout_gravity="right"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="设置"
+        android:textColor="#007AFF"
+        android:background="@android:color/transparent"
+        android:textSize="17sp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="16dp"/>
+
+    <!-- 事项名称标题 - iOS风格卡片 -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:gravity="center"
-        android:layout_marginBottom="24dp"/>
+        android:orientation="vertical"
+        android:background="@drawable/ios_card_background"
+        android:layout_marginBottom="24dp">
 
-    <!-- 日历统计视图 -->
-    <com.prolificinteractive.materialcalendarview.MaterialCalendarView
-        android:id="@+id/calendarView"
+        <TextView
+            android:id="@+id/tv_task_name"
+            android:layout_width="match_parent"
+            android:layout_height="72dp"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:gravity="center_vertical"
+            android:paddingLeft="16dp"
+            android:paddingRight="16dp"
+            android:textColor="#000000"/>
+    </LinearLayout>
+
+    <!-- 提醒信息显示区域 - iOS风格卡片 -->
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="300dp"
-        app:mcv_showOtherDates="all"
-        app:mcv_selectionColor="@color/colorPrimary"
-        app:mcv_tileSize="36dp"
-        app:mcv_arrowColor="@color/colorPrimary"
-        android:layout_marginBottom="24dp"
-        tools:ignore="MissingClass" />
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/ios_card_background"
+        android:layout_marginBottom="24dp">
 
-    <!-- 圆形记录按钮 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingLeft="16dp"
+            android:paddingRight="16dp">
+
+            <ImageView
+                android:id="@+id/iv_reminder_icon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:src="@drawable/knock"
+                android:visibility="gone"
+                android:layout_marginEnd="12dp"
+                app:tint="#34C759" />
+
+            <TextView
+                android:id="@+id/tv_reminder_info"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="17sp"
+                android:textColor="#007AFF"
+                android:text="未设置提醒"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- 日历统计视图 - iOS风格卡片 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/ios_card_background"
+        android:layout_marginBottom="24dp">
+
+        <com.prolificinteractive.materialcalendarview.MaterialCalendarView
+            android:id="@+id/calendarView"
+            android:layout_width="match_parent"
+            android:layout_height="300dp"
+            app:mcv_showOtherDates="all"
+            app:mcv_selectionColor="#007AFF"
+            app:mcv_tileSize="36dp"
+            app:mcv_arrowColor="#007AFF" />
+    </LinearLayout>
+
+    <!-- 圆形记录按钮 - iOS风格 -->
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -38,14 +104,17 @@
 
         <com.google.android.material.floatingactionbutton.FloatingActionButton
             android:id="@+id/fab_record"
-            android:layout_width="120dp"
-            android:layout_height="120dp"
-            android:src="@drawable/ic_check"
-            app:backgroundTint="@color/colorAccent"
-            app:rippleColor="@color/colorPrimaryDark"
-            app:elevation="8dp"
-            app:pressedTranslationZ="12dp"
+            android:layout_width="96dp"
+            android:layout_height="96dp"
+            android:layout_marginLeft="120dp"
+            app:fabCustomSize="96dp"
+            android:padding="28dp"
+            android:src="@drawable/done"
+            android:scaleType="fitCenter"
+            app:backgroundTint="#007AFF"
+            app:rippleColor="#0055CC"
+            app:elevation="4dp"
+            app:pressedTranslationZ="8dp"
             android:contentDescription="记录事项完成"/>
     </FrameLayout>
-
 </LinearLayout>

@@ -1,8 +1,12 @@
 package check_record;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
@@ -16,9 +20,7 @@ import com.prolificinteractive.materialcalendarview.DayViewDecorator;
 import com.prolificinteractive.materialcalendarview.DayViewFacade;
 import com.prolificinteractive.materialcalendarview.MaterialCalendarView;
 
-import java.lang.reflect.Type;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
@@ -28,123 +30,229 @@ import java.util.Map;
 import java.util.Set;
 
 import add_check.Add_Check;
+import checksetting.checksetting;
 
+/**
+ * 详情页面Activity - 显示单个任务的详细信息和完成记录
+ */
 public class CheckRecord extends AppCompatActivity {
 
+    // 视图组件
     private MaterialCalendarView calendarView;
     private FloatingActionButton fabRecord;
-    private int taskid;
+    private ImageView ivReminderIcon;
+    private TextView tvReminderInfo, tvTaskName;
+    private Button btnSetting;
+
+    // 数据相关
+    private int taskId, taskPosition;
     private String taskName;
-    private int taskPosition;
+    private boolean needsReminder;  // 新增：是否需要提醒标志
+    private String reminderTime;    // 新增：提醒时间
     private Set<CalendarDay> completedDates = new HashSet<>();
     private SharedPreferences sp;
-    private static final String TAG = "Log.CheckRecord--------->>>>";
+
+    // 日志标签
+    private static final String TAG = "Log.CheckRecord";
+    private static final String SP_NAME = "CheckListInfo";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_check_record);
 
-        // 初始化SharedPreferences (使用与主列表相同的SP文件)
-        sp = getSharedPreferences("CheckListInfo", MODE_PRIVATE);
+        // 初始化视图
+        initViews();
 
-        // 获取传递的事项信息
-        taskPosition = getIntent().getIntExtra("position", -1);
-        taskName = getIntent().getStringExtra("taskName");
-        taskid = getIntent().getIntExtra("id",-1);
-        Log.i(TAG, "intent获取的数据，taskPosition："+taskPosition+",taskName:"+taskName+"taskid:"+taskid);
+        // 获取Intent数据
+        getIntentData();
 
-        TextView tvTaskName = findViewById(R.id.tv_task_name);
-        tvTaskName.setText(taskName);
+        // 初始化本地存储
+        sp = getSharedPreferences(SP_NAME, MODE_PRIVATE);
 
-        initCalendarView();
-        initRecordButton();
-        loadCompletedDates();
+        // 加载数据（优先使用Intent传递的预加载数据）
+        loadData();
     }
 
-    //初始化日历识图
-    private void initCalendarView() {
+    /**
+     * 初始化所有视图组件
+     */
+    private void initViews() {
+        // 日历视图
         calendarView = findViewById(R.id.calendarView);
         calendarView.setSelectionMode(MaterialCalendarView.SELECTION_MODE_NONE);
-        calendarView.addDecorator(new CompletedDateDecorator());
-    }
 
-    // 初始化完成记录按钮
-    private void initRecordButton() {
+        // 设置按钮
+        btnSetting = findViewById(R.id.Check_Setting);
+        btnSetting.setOnClickListener(v -> {
+            // 创建跳转到设置页面的Intent
+            Intent intent = new Intent(CheckRecord.this, checksetting.class);
+
+            // 添加所有必要参数
+            intent.putExtra("id", taskId);               // 任务ID
+            intent.putExtra("taskName", taskName);       // 任务名称
+            intent.putExtra("needsReminder", needsReminder); // 是否需要提醒
+            intent.putExtra("reminderTime", reminderTime);   // 提醒时间(可能为null)
+
+            startActivity(intent);
+        });
+
+        // 任务名称
+        tvTaskName = findViewById(R.id.tv_task_name);
+
+        // 提醒信息区域
+        ivReminderIcon = findViewById(R.id.iv_reminder_icon);
+        tvReminderInfo = findViewById(R.id.tv_reminder_info);
+
+        // 记录按钮
         fabRecord = findViewById(R.id.fab_record);
-
         fabRecord.setOnLongClickListener(v -> {
             recordCompletion();
             return true;
         });
-
         fabRecord.setOnClickListener(v -> {
             Toast.makeText(this, "长按记录完成", Toast.LENGTH_SHORT).show();
         });
     }
 
-    // 从SP文件中加载数据
-    private void loadCompletedDates() {
-        Log.i(TAG, "开始根据taskid加载数据: " + taskid);
-        // 直接读取SP文件
-        String tasksJson = sp.getString("tasks", "[]");
-        Type type = new TypeToken<List<Map<String, Object>>>(){}.getType();
-        List<Map<String, Object>> tasks = new Gson().fromJson(tasksJson, type);
+    /**
+     * 获取Intent传递的数据
+     */
+    private void getIntentData() {
+        taskPosition = getIntent().getIntExtra("position", -1);
+        taskName = getIntent().getStringExtra("taskName");
+        taskId = getIntent().getIntExtra("id", -1);
 
-        // 通过taskid查找任务，而不是position
-        boolean found = false;
-        for (Map<String, Object> task : tasks) {
-            // 修复：先获取Double，再转为int
-            Object idObj = task.get("id");
-            int checkid = idObj instanceof Double
-                    ? ((Double) idObj).intValue()
-                    : (Integer) idObj;
+        // 设置任务名称
+        tvTaskName.setText(taskName);
 
-            if (checkid == taskid) {
-                List<String> records = (List<String>) task.get("completionRecords");
+        Log.d(TAG, "收到数据 - 位置:" + taskPosition + ", ID:" + taskId + ", 名称:" + taskName);
+    }
 
-                if (records != null) {
-                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
-                    for (String record : records) {
-                        try {
-                            Date date = sdf.parse(record);
-                            Calendar calendar = Calendar.getInstance();
-                            calendar.setTime(date);
-                            completedDates.add(CalendarDay.from(
-                                    calendar.get(Calendar.YEAR),
-                                    calendar.get(Calendar.MONTH),
-                                    calendar.get(Calendar.DAY_OF_MONTH)
-                            ));
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    }
+    /**
+     * 加载任务数据（优化后的加载逻辑）
+     */
+    private void loadData() {
+        // 情况1：Intent中直接包含预加载的任务数据（最快路径）
+        if (getIntent().hasExtra("taskData")) {
+            String taskJson = getIntent().getStringExtra("taskData");
+            Map<String, Object> task = new Gson().fromJson(taskJson,
+                    new TypeToken<Map<String, Object>>(){}.getType());
+
+            loadReminderInfo(task);
+            loadCompletedDates(task);
+            return;
+        }
+
+        // 情况2：需要从SharedPreferences加载（较慢）
+        new Thread(() -> {
+            // 在后台线程执行耗时操作
+            String tasksJson = sp.getString("tasks", "[]");
+            List<Map<String, Object>> tasks = new Gson().fromJson(tasksJson,
+                    new TypeToken<List<Map<String, Object>>>(){}.getType());
+
+            Map<String, Object> task = findTaskById(tasks, taskId);
+
+            runOnUiThread(() -> {
+                if (task != null) {
+                    loadReminderInfo(task);
+                    loadCompletedDates(task);
+                } else {
+                    Toast.makeText(this, "加载任务数据失败", Toast.LENGTH_SHORT).show();
                 }
-                found = true;
-                break;
+            });
+        }).start();
+    }
+
+    /**
+     * 从列表中查找特定ID的任务
+     */
+    private Map<String, Object> findTaskById(List<Map<String, Object>> tasks, int targetId) {
+        for (Map<String, Object> task : tasks) {
+            Object idObj = task.get("id");
+            int id = idObj instanceof Double ? ((Double) idObj).intValue() : (Integer) idObj;
+            if (id == targetId) {
+                return task;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * 加载提醒信息
+     * 同时更新needsReminder和reminderTime字段
+     */
+    private void loadReminderInfo(Map<String, Object> task) {
+        // 获取提醒设置
+        needsReminder = task.containsKey("needsReminder")
+                && (boolean) task.get("needsReminder");
+
+        // 获取提醒时间
+        reminderTime = task.containsKey("reminderTime")
+                ? (String) task.get("reminderTime")
+                : null;
+
+        // 更新UI
+        if (needsReminder && reminderTime != null) {
+            ivReminderIcon.setVisibility(View.VISIBLE);
+            tvReminderInfo.setText("每天 " + reminderTime + " 提醒");
+            Log.d(TAG, "找到提醒设置: " + reminderTime);
+        } else {
+            ivReminderIcon.setVisibility(View.GONE);
+            tvReminderInfo.setText("未设置提醒");
+            Log.d(TAG, "未设置提醒");
+        }
+    }
+
+    /**
+     * 加载完成日期记录
+     */
+    private void loadCompletedDates(Map<String, Object> task) {
+        List<String> records = (List<String>) task.get("completionRecords");
+        if (records != null) {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+            for (String record : records) {
+                try {
+                    Date date = sdf.parse(record);
+                    Calendar calendar = Calendar.getInstance();
+                    calendar.setTime(date);
+                    completedDates.add(CalendarDay.from(
+                            calendar.get(Calendar.YEAR),
+                            calendar.get(Calendar.MONTH),
+                            calendar.get(Calendar.DAY_OF_MONTH)
+                    ));
+                } catch (Exception e) {
+                    Log.e(TAG, "日期解析错误", e);
+                }
             }
         }
 
-        if (!found) {
-            Log.w(TAG, "未找到ID为" + taskid + "的任务记录");
-        }
-
+        // 设置日历装饰器
+        calendarView.addDecorator(new CompletedDateDecorator());
         calendarView.invalidateDecorators();
     }
 
+    /**
+     * 记录任务完成
+     */
     private void recordCompletion() {
         CalendarDay today = CalendarDay.today();
         if (!completedDates.contains(today)) {
             completedDates.add(today);
-            // 使用Add_Check中的方法更新记录
             Add_Check.addCompletionRecord(sp, taskPosition);
             calendarView.invalidateDecorators();
             Toast.makeText(this, "已记录完成", Toast.LENGTH_SHORT).show();
+
+            // 设置结果表示数据已更新
+            setResult(RESULT_OK);
         } else {
             Toast.makeText(this, "今日已记录过", Toast.LENGTH_SHORT).show();
         }
     }
 
+    /**
+     * 日历装饰器 - 标记已完成日期
+     */
     private class CompletedDateDecorator implements DayViewDecorator {
         @Override
         public boolean shouldDecorate(CalendarDay day) {
@@ -153,7 +261,7 @@ public class CheckRecord extends AppCompatActivity {
 
         @Override
         public void decorate(DayViewFacade view) {
-            view.setBackgroundDrawable(getResources().getDrawable(R.drawable.calendar_highlight));
+            view.setBackgroundDrawable(getResources().getDrawable(R.drawable.ios_button_background));
         }
     }
 }

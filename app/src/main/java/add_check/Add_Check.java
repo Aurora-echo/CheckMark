@@ -2,6 +2,7 @@ package add_check;
 
 import android.app.TimePickerDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
@@ -117,7 +118,10 @@ public class Add_Check extends AppCompatActivity {
         // 保存到SharedPreferences
         saveTasksToSharedPreferences(tasks);
 
-        Toast.makeText(this, "事项添加成功", Toast.LENGTH_SHORT).show();
+        // 保存数据成功后
+        Intent resultIntent = new Intent();
+        setResult(RESULT_OK, resultIntent);  // 必须设置RESULT_OK
+        Toast.makeText(this, "添加成功", Toast.LENGTH_SHORT).show();
         finish();
     }
 
