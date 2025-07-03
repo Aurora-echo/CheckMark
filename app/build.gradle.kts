@@ -37,6 +37,7 @@ dependencies {
     implementation(libs.material)
     implementation(libs.activity)
     implementation(libs.constraintlayout)
+    implementation(libs.scenecore)
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)
@@ -46,5 +47,7 @@ dependencies {
     implementation("com.google.android.material:material:1.6.0")
     implementation("com.prolificinteractive:material-calendarview:1.4.3")
     implementation("com.google.android.material:material:1.6.0")
+    implementation("androidx.cardview:cardview:1.0.0")
+    implementation("com.prolificinteractive:material-calendarview:1.4.3")
 
 }

@@ -12,6 +12,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.util.Log;
+import android.view.View;
 import android.widget.ImageButton;
 import android.widget.Toast;
 
@@ -51,6 +52,7 @@ public class MainList extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_main_list);
         Log.d(TAG, "Activity创建");
 
@@ -219,10 +221,14 @@ public class MainList extends AppCompatActivity {
                 new TypeToken<List<Map<String, Object>>>(){}.getType());
 
         for (Map<String, Object> task : tasks) {
+            //有needsReminder字段且值为true时，设置闹钟
             if (task.containsKey("needsReminder") && (boolean) task.get("needsReminder")) {
+                //拿到事项的id
                 Object idObj = task.get("id");
                 int id = idObj instanceof Double ? ((Double) idObj).intValue() : (Integer) idObj;
+                //拿到事项的名称
                 String name = (String) task.get("name");
+                //拿到事项的提醒时间
                 String time = (String) task.get("reminderTime");
 
                 if (id != -1 && name != null && time != null) {
@@ -243,6 +249,7 @@ public class MainList extends AppCompatActivity {
 
     @Override
     protected void onResume() {
+        Log.i(TAG, "onResume: 执行，取消所有提醒，重新设置所有提醒");
         super.onResume();
         cancelAllReminders();
         scheduleAllReminders(); // 确保提醒设置正确

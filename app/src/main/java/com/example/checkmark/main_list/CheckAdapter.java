@@ -10,7 +10,6 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.checkmark.R;
-import com.example.checkmark.main_list.CheckItem;
 
 import java.util.List;
 
@@ -18,7 +17,7 @@ public class CheckAdapter extends RecyclerView.Adapter<CheckAdapter.TodoViewHold
 
     private List<CheckItem> CheckItem;
     private OnItemClickListener listener;
-    private static final String TAG = "Log--------->>>>";
+    private static final String TAG = "LogCheckAdapter";
 
     public interface OnItemClickListener {
         void onItemClick(int position);
@@ -32,7 +31,7 @@ public class CheckAdapter extends RecyclerView.Adapter<CheckAdapter.TodoViewHold
 
     @NonNull
     @Override
-    public TodoViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+    public TodoViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.checklist, parent, false);
         return new TodoViewHolder(view);

@@ -75,8 +75,8 @@ public class NotificationHelper {
 
         // 4. 构建通知对象(使用兼容库支持旧版本)
         Notification notification = new NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_checked) // 小图标(状态栏显示)
-                .setContentTitle("待办事项提醒")     // 通知标题
+                .setSmallIcon(R.drawable.checkmack) // 小图标(状态栏显示)
+                .setContentTitle("任务提醒")     // 通知标题
                 .setContentText(message)           // 通知内容
                 .setPriority(NotificationCompat.PRIORITY_HIGH) // 高优先级(弹出+声音)
                 .setContentIntent(pendingIntent)    // 设置点击后的行为
@@ -109,9 +109,9 @@ public class NotificationHelper {
         // 只有Android 8.0(Oreo)及以上版本需要渠道
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             // 渠道名称(用户可见)
-            CharSequence name = "待办提醒";
+            CharSequence name = "任务未完成提醒";
             // 渠道描述(用户可见)
-            String description = "待办事项提醒通知";
+            String description = "对用户设置了每日提醒的任务进行提醒";
             // 重要性级别(高:弹出通知+发出声音)
             int importance = NotificationManager.IMPORTANCE_HIGH;
 
@@ -122,8 +122,8 @@ public class NotificationHelper {
             // 可选设置(根据需要取消注释)
             // channel.enableLights(true);       // 启用指示灯
             // channel.setLightColor(Color.RED); // 设置指示灯颜色
-            // channel.enableVibration(true);   // 启用震动
-            // channel.setVibrationPattern(new long[]{100,200,100}); // 震动模式
+            channel.enableVibration(true);   // 启用震动
+            channel.setVibrationPattern(new long[]{100,200,100}); // 震动模式
 
             // 获取通知管理器
             NotificationManager manager =

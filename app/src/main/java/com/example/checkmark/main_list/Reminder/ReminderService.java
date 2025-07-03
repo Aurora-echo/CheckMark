@@ -53,14 +53,6 @@ public class ReminderService extends BroadcastReceiver {
     @SuppressLint("MissingPermission") // 忽略权限警告(已在manifest声明)
     @Override
     public void onReceive(Context context, Intent intent) {
-        // 1. 获取电源锁唤醒设备(确保屏幕亮起)
-        // FULL_WAKE_LOCK: 完全唤醒(屏幕+键盘+CPU)
-        // ACQUIRE_CAUSES_WAKEUP: 强制亮屏
-//        PowerManager.WakeLock wakeLock = ((PowerManager) context.getSystemService(Context.POWER_SERVICE))
-//                .newWakeLock(PowerManager.FULL_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP,
-//                        "CheckMark:ReminderLock");
-//        wakeLock.acquire(10 * 1000); // 持有锁10秒
-
         try {
             // 2. 从Intent中获取任务数据
             int taskId = intent.getIntExtra("taskId", -1);
@@ -72,18 +64,17 @@ public class ReminderService extends BroadcastReceiver {
                 Log.d(TAG, "收到提醒: 任务ID=" + taskId + ", 名称=" + taskName);
 
                 // 4. 使用NotificationHelper发送通知
-                String message = "您当日"+ taskName+"还未完成！提醒时间："+ (reminderTime != null ? reminderTime : "");
+                String message = "今天"+ taskName+"还没有完成！不要忘记了！";
                 NotificationHelper.sendReminderNotification(context, taskId, taskName, message);
 
                 // 5. 如果需要重复提醒，设置第二天的闹钟
                 if (shouldReschedule(context, taskId) && reminderTime != null) {
-                    Log.d(TAG, "设置次日重复提醒");
+                    Log.d(TAG, "设置次日重复提醒,下一个提醒时间为："+reminderTime);
                     setExactAlarm(context, taskId, taskName, reminderTime);
                 }
             }
-        } finally {
-            // 6. 释放电源锁(重要！避免耗电)
-            //wakeLock.release();
+        } catch (Exception e) {
+            Log.e(TAG,"发送通知出错："+e.getMessage());
         }
     }
 
@@ -101,9 +92,10 @@ public class ReminderService extends BroadcastReceiver {
      *      旧版本: set
      */
     public static void setExactAlarm(Context context, int taskId, String taskName, String reminderTime) {
+        Log.i(TAG, "为"+taskId+"设置精确闹钟,提醒时间为：" + reminderTime);
         // 1. 检查时间格式是否有效
         if (TextUtils.isEmpty(reminderTime)) {
-            Log.w(TAG, "提醒时间为空，无法设置");
+            Log.i(TAG, "提醒时间为空，无法设置");
             return;
         }
 
@@ -151,7 +143,6 @@ public class ReminderService extends BroadcastReceiver {
 
     /**
      * 取消已设置的闹钟
-     *
      * @param context 上下文
      * @param taskId 要取消的任务ID
      */

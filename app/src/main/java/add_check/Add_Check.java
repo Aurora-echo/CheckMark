@@ -90,7 +90,7 @@ public class Add_Check extends AppCompatActivity {
     private void saveTaskToSharedPreferences() {
         String taskName = etTaskName.getText().toString().trim();
         if (taskName.isEmpty()) {
-            etTaskName.setError("请输入事项名称");
+            etTaskName.setError("名称还没填啊");
             return;
         }
 
@@ -99,7 +99,7 @@ public class Add_Check extends AppCompatActivity {
 
         // 检查是否需要提醒但未选择时间
         if (needsReminder && reminderTime.isEmpty()) {
-            Toast.makeText(this, "请选择提醒时间", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "不是说要提醒吗，时间呢？", Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -121,7 +121,7 @@ public class Add_Check extends AppCompatActivity {
         // 保存数据成功后
         Intent resultIntent = new Intent();
         setResult(RESULT_OK, resultIntent);  // 必须设置RESULT_OK
-        Toast.makeText(this, "添加成功", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "事件已记录", Toast.LENGTH_SHORT).show();
         finish();
     }
 

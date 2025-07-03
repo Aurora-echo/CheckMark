@@ -107,12 +107,12 @@ public class checksetting extends AppCompatActivity {
             String time = needsReminder ? selectedTime : null;
 
             if (name.isEmpty()) {
-                Toast.makeText(this, "请输入事项名称", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "名称都不写保存什么？", Toast.LENGTH_SHORT).show();
                 return;
             }
 
             if (needsReminder && time == null) {
-                Toast.makeText(this, "请选择提醒时间", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "需要提醒又不选时间？", Toast.LENGTH_SHORT).show();
                 return;
             }
 
@@ -122,7 +122,7 @@ public class checksetting extends AppCompatActivity {
 //            result.putExtra("needsReminder", needsReminder);
 //            result.putExtra("reminderTime", time);
 //            setResult(RESULT_OK, result);
-            Toast.makeText(this, "还没实现保存逻辑", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "还没实现保存逻辑，要不你来做？", Toast.LENGTH_SHORT).show();
             finish();
         }
 }

@@ -92,7 +92,8 @@
             app:mcv_showOtherDates="all"
             app:mcv_selectionColor="#007AFF"
             app:mcv_tileSize="36dp"
-            app:mcv_arrowColor="#007AFF" />
+            app:mcv_arrowColor="#007AFF"
+            tools:ignore="MissingClass" />
     </LinearLayout>
 
     <!-- 圆形记录按钮 - iOS风格 -->

@@ -11,4 +11,14 @@
     <color name="colorPrimaryDark">#3700B3</color>
     <color name="colorAccent">#03DAC5</color>
     <color name="highlight_color">#4CAF50</color>
+    <!-- 微信主绿色 -->
+    <color name="wechat_green">#07C160</color>
+    <color name="wechat_green_dark">#069E4A</color>
+
+    <!-- 背景色 -->
+    <color name="wechat_bg">#F5F5F5</color>
+
+    <!-- 灰度 -->
+    <color name="gray_200">#EEEEEE</color>
+    <color name="gray_500">#999999</color>
 </resources>

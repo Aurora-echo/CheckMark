@@ -111,7 +111,7 @@ public class CheckRecord extends AppCompatActivity {
             return true;
         });
         fabRecord.setOnClickListener(v -> {
-            Toast.makeText(this, "长按记录完成", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "请长按来完成任务记录~", Toast.LENGTH_SHORT).show();
         });
     }
 
@@ -196,7 +196,7 @@ public class CheckRecord extends AppCompatActivity {
         if (needsReminder && reminderTime != null) {
             ivReminderIcon.setVisibility(View.VISIBLE);
             tvReminderInfo.setText("每天 " + reminderTime + " 提醒");
-            Log.d(TAG, "找到提醒设置: " + reminderTime);
+            Log.i(TAG, "找到提醒设置: " + reminderTime);
         } else {
             ivReminderIcon.setVisibility(View.GONE);
             tvReminderInfo.setText("未设置提醒");
@@ -241,10 +241,13 @@ public class CheckRecord extends AppCompatActivity {
             completedDates.add(today);
             Add_Check.addCompletionRecord(sp, taskPosition);
             calendarView.invalidateDecorators();
-            Toast.makeText(this, "已记录完成", Toast.LENGTH_SHORT).show();
-
+            Toast.makeText(this, "今天已记录完成", Toast.LENGTH_SHORT).show();
             // 设置结果表示数据已更新
             setResult(RESULT_OK);
+            /**
+             * 任务当天已完成，取消当天闹钟，设置下一天的闹钟,还没有实现，不会啊
+             * 传一个时间的，不用传日期的，因为闹钟是每天提醒的
+             * **/
         } else {
             Toast.makeText(this, "今日已记录过", Toast.LENGTH_SHORT).show();
         }
