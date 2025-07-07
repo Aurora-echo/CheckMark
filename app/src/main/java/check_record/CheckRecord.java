@@ -14,13 +14,16 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.checkmark.R;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.gson.Gson;
+import com.google.gson.internal.LinkedTreeMap;
 import com.google.gson.reflect.TypeToken;
 import com.prolificinteractive.materialcalendarview.CalendarDay;
 import com.prolificinteractive.materialcalendarview.DayViewDecorator;
 import com.prolificinteractive.materialcalendarview.DayViewFacade;
 import com.prolificinteractive.materialcalendarview.MaterialCalendarView;
 
+import java.lang.reflect.Type;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
@@ -45,7 +48,8 @@ public class CheckRecord extends AppCompatActivity {
     private Button btnSetting;
 
     // 数据相关
-    private int taskId, taskPosition;
+    private int  taskPosition;
+    private double doubletaskId;
     private String taskName;
     private boolean needsReminder;  // 新增：是否需要提醒标志
     private String reminderTime;    // 新增：提醒时间
@@ -55,6 +59,8 @@ public class CheckRecord extends AppCompatActivity {
     // 日志标签
     private static final String TAG = "Log.CheckRecord";
     private static final String SP_NAME = "CheckListInfo";
+
+    LinkedTreeMap<String, Object> task_detail;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -89,7 +95,8 @@ public class CheckRecord extends AppCompatActivity {
             Intent intent = new Intent(CheckRecord.this, checksetting.class);
 
             // 添加所有必要参数
-            intent.putExtra("id", taskId);               // 任务ID
+            intent.putExtra("id", doubletaskId);               // 任务ID
+            Log.i(TAG,"进入事项详情处放入设置intent时候的id:"+doubletaskId);
             intent.putExtra("taskName", taskName);       // 任务名称
             intent.putExtra("needsReminder", needsReminder); // 是否需要提醒
             intent.putExtra("reminderTime", reminderTime);   // 提醒时间(可能为null)
@@ -121,47 +128,34 @@ public class CheckRecord extends AppCompatActivity {
     private void getIntentData() {
         taskPosition = getIntent().getIntExtra("position", -1);
         taskName = getIntent().getStringExtra("taskName");
-        taskId = getIntent().getIntExtra("id", -1);
-
+        String taskData = getIntent().getStringExtra("taskData");
+        // 指定反序列化的目标类型
+        Type type = new TypeToken<LinkedTreeMap<String, Object>>() {}.getType();
+        // 使用 Gson 解析 JSON
+        task_detail = new Gson().fromJson(taskData, type);
+        doubletaskId=getIntent().getDoubleExtra("id", -1);
         // 设置任务名称
         tvTaskName.setText(taskName);
-
-        Log.d(TAG, "收到数据 - 位置:" + taskPosition + ", ID:" + taskId + ", 名称:" + taskName);
+        Log.i(TAG, "收到数据,位置:" + taskPosition + ", ID:" + doubletaskId + ", 名称:" + taskName);
+        Log.i(TAG, "taskData:" + task_detail );
     }
 
     /**
      * 加载任务数据（优化后的加载逻辑）
      */
     private void loadData() {
-        // 情况1：Intent中直接包含预加载的任务数据（最快路径）
         if (getIntent().hasExtra("taskData")) {
+            Log.i(TAG,"从intent文件中load任务详情");
             String taskJson = getIntent().getStringExtra("taskData");
-            Map<String, Object> task = new Gson().fromJson(taskJson,
-                    new TypeToken<Map<String, Object>>(){}.getType());
-
+            Map<String, Object> task = new Gson().fromJson(taskJson, new TypeToken<Map<String, Object>>(){}.getType());
+            //加载事项信息
             loadReminderInfo(task);
+            //加载完成数据
             loadCompletedDates(task);
             return;
+        }else{
+            finish(); // 如果没有数据，则直接结束当前Activity
         }
-
-        // 情况2：需要从SharedPreferences加载（较慢）
-        new Thread(() -> {
-            // 在后台线程执行耗时操作
-            String tasksJson = sp.getString("tasks", "[]");
-            List<Map<String, Object>> tasks = new Gson().fromJson(tasksJson,
-                    new TypeToken<List<Map<String, Object>>>(){}.getType());
-
-            Map<String, Object> task = findTaskById(tasks, taskId);
-
-            runOnUiThread(() -> {
-                if (task != null) {
-                    loadReminderInfo(task);
-                    loadCompletedDates(task);
-                } else {
-                    Toast.makeText(this, "加载任务数据失败", Toast.LENGTH_SHORT).show();
-                }
-            });
-        }).start();
     }
 
     /**
@@ -184,13 +178,10 @@ public class CheckRecord extends AppCompatActivity {
      */
     private void loadReminderInfo(Map<String, Object> task) {
         // 获取提醒设置
-        needsReminder = task.containsKey("needsReminder")
-                && (boolean) task.get("needsReminder");
+        needsReminder = task.containsKey("needsReminder") && (boolean) task.get("needsReminder");
 
         // 获取提醒时间
-        reminderTime = task.containsKey("reminderTime")
-                ? (String) task.get("reminderTime")
-                : null;
+        reminderTime = task.containsKey("reminderTime") ? (String) task.get("reminderTime") : null;
 
         // 更新UI
         if (needsReminder && reminderTime != null) {

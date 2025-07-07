@@ -42,6 +42,7 @@ public class Add_Check extends AppCompatActivity {
     private static final String TASKS_KEY = "tasks";
     private static final String TAG = "Log.Add_Check";
 
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -58,7 +59,7 @@ public class Add_Check extends AppCompatActivity {
         tvSelectedTime = findViewById(R.id.tv_selected_time);
         btnConfirm = findViewById(R.id.btn_confirm);
 
-        // 勾选框状态变化监听
+        // “每日未完成提醒”勾选框状态变化监听
         cbDailyReminder.setOnCheckedChangeListener((buttonView, isChecked) -> {
             layoutTimePicker.setVisibility(isChecked ? View.VISIBLE : View.GONE);
             if (!isChecked) {
@@ -109,7 +110,7 @@ public class Add_Check extends AppCompatActivity {
         task.put("name", taskName);
         task.put("needsReminder", needsReminder);
         task.put("reminderTime", reminderTime);
-        task.put("completionRecords", new ArrayList<String>()); // 用于记录完成时间点
+        task.put("completionRecords", new ArrayList<String>());
 
         // 获取现有任务列表
         List<Map<String, Object>> tasks = getTasksFromSharedPreferences();

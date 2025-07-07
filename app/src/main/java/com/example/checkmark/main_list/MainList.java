@@ -48,6 +48,7 @@ public class MainList extends AppCompatActivity {
     private static final String SP_NAME = "CheckListInfo";
     private static final String TASKS_KEY = "tasks";
     private static final String TAG = "Log.MainList";
+    List<Map<String, Object>> tasks; //一个包含了所有任务的列表
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -115,38 +116,32 @@ public class MainList extends AppCompatActivity {
     /**
      * 打开详情页面
      * @param position 点击的位置
-     *
      * 优化点：预先加载任务数据并传递，避免详情页重复解析
      */
     private void openCheckRecord(int position) {
-        // 获取完整任务数据
         Map<String, Object> task = getTaskFromSharedPrefs(CheckList.get(position).getId());
-
         Intent intent = new Intent(this, CheckRecord.class);
-        intent.putExtra("id", CheckList.get(position).getId());
+        intent.putExtra("id", (double) task.get("id"));
         intent.putExtra("position", position);
-        intent.putExtra("taskName", CheckList.get(position).getText());
-
-        // 如果找到任务数据，直接传递序列化后的JSON
+        intent.putExtra("taskName", (String) task.get("name"));
+        // 如果没找到任务数据，直接传递序列化后的JSON
         if (task != null) {
+            Log.i(TAG,"TASK的类型："+task.getClass());
             intent.putExtra("taskData", new Gson().toJson(task));
         }
-
         startActivityForResult(intent,1);
     }
 
     /**
      * 从SharedPreferences获取单个任务数据
+     * 传入taskid获取事项详细信息
      */
     private Map<String, Object> getTaskFromSharedPrefs(int taskId) {
-        String tasksJson = sp.getString(TASKS_KEY, "[]");
-        Type type = new TypeToken<List<Map<String, Object>>>(){}.getType();
-        List<Map<String, Object>> tasks = new Gson().fromJson(tasksJson, type);
-
         for (Map<String, Object> task : tasks) {
             Object idObj = task.get("id");
             int id = idObj instanceof Double ? ((Double) idObj).intValue() : (Integer) idObj;
             if (id == taskId) {
+                Log.i(TAG,"点击了列表某项，获取到详情发过去,task:"+task);
                 return task;
             }
         }
@@ -169,30 +164,25 @@ public class MainList extends AppCompatActivity {
     private void loadTasksFromSharedPreferences() {
         String tasksJson = sp.getString(TASKS_KEY, "[]");
         Type type = new TypeToken<List<Map<String, Object>>>(){}.getType();
-        List<Map<String, Object>> tasks = new Gson().fromJson(tasksJson, type);
-
+        tasks = new Gson().fromJson(tasksJson, type);
+        Log.i(TAG,"loadTasksFromSharedPreferences中的tasks:"+tasks);
         // 获取今天日期用于检查完成状态
         String today = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
                 .format(new Date());
-
         CheckList.clear();
         for (Map<String, Object> task : tasks) {
             // 解析任务ID
             Object idObj = task.get("id");
             int id = idObj instanceof Double ? ((Double) idObj).intValue() : (Integer) idObj;
-
             // 检查今日是否完成
             boolean isCompletedToday = checkIfCompletedToday(task, today);
-
             // 添加到列表
             CheckList.add(new CheckItem(id, (String) task.get("name"), isCompletedToday));
         }
-
         // 刷新列表
         if (CheckAdapter != null) {
             CheckAdapter.notifyDataSetChanged();
         }
-
         // 设置提醒
         scheduleAllReminders();
     }
