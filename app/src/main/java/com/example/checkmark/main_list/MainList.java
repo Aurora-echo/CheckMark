@@ -104,6 +104,7 @@ public class MainList extends AppCompatActivity {
                 showCompletionStatus(position);
             }
         });
+
         recyclerView.setAdapter(CheckAdapter);
 
         // 设置添加按钮
@@ -111,6 +112,7 @@ public class MainList extends AppCompatActivity {
         btnAdd.setOnClickListener(v -> {
             startActivityForResult(new Intent(MainList.this, Add_Check.class), 1);
         });
+
     }
 
     /**
@@ -165,7 +167,6 @@ public class MainList extends AppCompatActivity {
         String tasksJson = sp.getString(TASKS_KEY, "[]");
         Type type = new TypeToken<List<Map<String, Object>>>(){}.getType();
         tasks = new Gson().fromJson(tasksJson, type);
-        Log.i(TAG,"loadTasksFromSharedPreferences中的tasks:"+tasks);
         // 获取今天日期用于检查完成状态
         String today = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
                 .format(new Date());
@@ -243,6 +244,7 @@ public class MainList extends AppCompatActivity {
         super.onResume();
         cancelAllReminders();
         scheduleAllReminders(); // 确保提醒设置正确
+        loadTasksFromSharedPreferences(); // 刷新列表
     }
 
     /**

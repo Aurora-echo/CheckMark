@@ -258,4 +258,10 @@ public class CheckRecord extends AppCompatActivity {
             view.setBackgroundDrawable(getResources().getDrawable(R.drawable.ios_button_background));
         }
     }
+
+    @Override
+    protected void onResume() {
+        Log.i(TAG, "onResume: 刷新Record()");
+        super.onResume();
+    }
 }

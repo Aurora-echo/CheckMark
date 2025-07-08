@@ -19,6 +19,7 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.example.checkmark.R;
+import com.example.checkmark.main_list.MainList;
 import com.google.android.material.textfield.TextInputEditText;
 
 import org.json.JSONArray;
@@ -27,6 +28,8 @@ import org.json.JSONObject;
 
 import java.util.Calendar;
 import java.util.Locale;
+
+import check_record.CheckRecord;
 
 public class checksetting extends AppCompatActivity {
         private TextInputEditText etTaskName;
@@ -127,7 +130,6 @@ public class checksetting extends AppCompatActivity {
             }
             // 保存逻辑
             saveSettingsToSPfile(taskId,name,needsReminder,time);
-            finish();
         }
 
     private void saveSettingsToSPfile(double id, String name, boolean needsReminder, String time) {
@@ -138,7 +140,7 @@ public class checksetting extends AppCompatActivity {
         try {
             // 解析 JSON 数组
             JSONArray tasksArray = new JSONArray(tasksJson);
-            Log.i(TAG,"解析出来的数组，tasksArray:"+tasksArray);
+            Log.i(TAG,"保存之前解析出来的数组，tasksArray:"+tasksArray);
             // 遍历查找匹配 ID 的任务
             for (int i = 0; i < tasksArray.length(); i++) {
                 JSONObject task = tasksArray.getJSONObject(i);
@@ -156,11 +158,14 @@ public class checksetting extends AppCompatActivity {
                     break; // 找到后退出循环
                 }
             }
+            Log.i(TAG,"保存之后的数组，tasksArray:"+tasksArray);
             // 保存修改后的数据回 SharedPreferences
             SharedPreferences.Editor editor = sp.edit();
             editor.putString(TASKS_KEY, tasksArray.toString());
             editor.apply();
             Toast.makeText(this, "修改成功！", Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(this,MainList.class);
+            startActivity(intent);
         } catch (JSONException e) {
             e.printStackTrace();
             // 处理 JSON 解析错误
