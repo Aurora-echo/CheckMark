@@ -146,7 +146,7 @@
             android:layout_height="96dp"
             android:layout_marginLeft="120dp"
             app:fabCustomSize="96dp"
-            android:padding="28dp"
+            android:padding="10dp"
             android:src="@drawable/done"
             android:scaleType="fitCenter"
             app:backgroundTint="#0e5d9d"

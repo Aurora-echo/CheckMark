@@ -5,8 +5,7 @@
     android:layout_height="match_parent"
     android:fillViewport="true"
     android:background="#F0F1F3"
-    android:paddingLeft="16dp"
-    android:paddingRight="16dp">
+    android:padding="16dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -14,152 +13,135 @@
         android:orientation="vertical"
         android:focusableInTouchMode="true">
 
-        <!-- 事项名称输入框 - iOS风格卡片 -->
-        <LinearLayout
+        <!-- 主卡片容器 -->
+        <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="@drawable/ios_card_background"
-            android:layout_marginTop="16dp">
+            app:cardCornerRadius="8dp"
+            app:cardElevation="2dp"
+            app:cardBackgroundColor="@android:color/white"
+            android:layout_marginBottom="24dp">
 
-            <com.google.android.material.textfield.TextInputLayout
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="事项名称"
-                app:boxBackgroundMode="none"
-                app:hintTextColor="#8E8E93"
-                android:paddingLeft="16dp"
-                android:paddingRight="16dp">
+                android:orientation="vertical"
+                android:padding="16dp">
 
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/et_task_name"
+                <!-- 卡片标题 -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="添加任务"
+                    android:textSize="18sp"
+                    android:textColor="#000000"
+                    android:layout_marginBottom="16dp"/>
+
+                <!-- 事项名称输入框 -->
+                <com.google.android.material.textfield.TextInputLayout
                     android:layout_width="match_parent"
-                    android:layout_height="56dp"
-                    android:maxLines="1"
-                    android:textSize="17sp"
-                    android:textColor="#000000"
-                    android:inputType="textCapSentences|textAutoComplete"
-                    android:background="@android:color/transparent"/>
-            </com.google.android.material.textfield.TextInputLayout>
-        </LinearLayout>
-
-        <!-- 每日提醒开关 - iOS风格卡片 -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="@drawable/ios_card_background"
-            android:layout_marginTop="16dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:background="?attr/selectableItemBackground"
-                android:paddingLeft="16dp"
-                android:paddingRight="16dp">
-
-                <TextView
-                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:text="每日未完成提醒"
-                    android:textSize="17sp"
-                    android:textColor="#000000"
-                    android:layout_weight="1"/>
+                    android:layout_marginBottom="24dp"
+                    app:boxBackgroundMode="outline"
+                    app:boxCornerRadiusTopStart="4dp"
+                    app:boxCornerRadiusTopEnd="4dp"
+                    app:boxCornerRadiusBottomEnd="4dp"
+                    app:boxCornerRadiusBottomStart="4dp"
+                    app:hintTextColor="#8E8E93"
+                    android:hint="任务名称">
 
-                <CheckBox
-                    android:id="@+id/cb_daily_reminder"
-                    android:layout_width="wrap_content"
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/et_task_name"
+                        android:layout_width="match_parent"
+                        android:layout_height="56dp"
+                        android:maxLines="1"
+                        android:textSize="17sp"
+                        android:textColor="#000000"
+                        android:inputType="textCapSentences|textAutoComplete"/>
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- 提醒设置（右下角布局） -->
+                <RelativeLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:buttonTint="#34C759"/>
+                    android:layout_marginBottom="16dp">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="每日提醒"
+                            android:textSize="14sp"
+                            android:layout_marginEnd="8dp"/>
+
+                        <CheckBox
+                            android:id="@+id/cb_daily_reminder"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:buttonTint="#0e5d9d"/>
+                    </LinearLayout>
+                </RelativeLayout>
+
+                <!-- 时间选择器（默认隐藏） -->
+                <LinearLayout
+                    android:id="@+id/layout_time_picker"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    android:layout_marginTop="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="提醒时间"
+                        android:textSize="16sp"
+                        android:layout_marginBottom="8dp"/>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <Button
+                            android:id="@+id/btn_select_time"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="选择时间"
+                            android:textColor="#0e5d9d"
+                            android:background="?attr/selectableItemBackgroundBorderless"/>
+
+                        <TextView
+                            android:id="@+id/tv_selected_time"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textSize="16sp"
+                            android:layout_marginStart="16dp"
+                            android:text="未选择"
+                            android:textColor="#8E8E93"/>
+                    </LinearLayout>
+                </LinearLayout>
             </LinearLayout>
-        </LinearLayout>
+        </androidx.cardview.widget.CardView>
 
-        <!-- 时间选择布局 - iOS风格卡片 -->
-        <LinearLayout
-            android:id="@+id/layout_time_picker"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:background="@drawable/ios_card_background"
-            android:layout_marginTop="16dp"
-            android:visibility="gone">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:background="?attr/selectableItemBackground"
-                android:paddingLeft="16dp"
-                android:paddingRight="16dp">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:text="提醒时间"
-                    android:textSize="17sp"
-                    android:textColor="#000000"
-                    android:layout_weight="1"/>
-
-                <Button
-                    android:id="@+id/btn_select_time"
-                    android:layout_width="wrap_content"
-                    android:layout_height="36dp"
-                    android:text="选择"
-                    android:textSize="16sp"
-                    android:textColor="#007AFF"
-                    android:background="@android:color/transparent"
-                    android:paddingLeft="12dp"
-                    android:paddingRight="12dp"/>
-            </LinearLayout>
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="#F0F0F0"
-                android:layout_marginLeft="16dp"/>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:background="?attr/selectableItemBackground"
-                android:paddingLeft="16dp"
-                android:paddingRight="16dp">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:text="已选时间"
-                    android:textSize="17sp"
-                    android:textColor="#000000"
-                    android:layout_weight="1"/>
-
-                <TextView
-                    android:id="@+id/tv_selected_time"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textSize="17sp"
-                    android:textColor="#8E8E93"/>
-            </LinearLayout>
-        </LinearLayout>
-
-        <!-- 确认按钮 - iOS风格 -->
-        <Button
+        <!-- 圆形确认按钮 -->
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_confirm"
-            android:layout_width="match_parent"
-            android:layout_height="50dp"
-            android:text="确认添加"
-            android:textSize="17sp"
-            android:textColor="#FFFFFF"
-            android:layout_marginTop="32dp"
-            android:layout_marginLeft="16dp"
-            android:layout_marginRight="16dp"
-            android:backgroundTint="#007AFF"
-            android:background="@drawable/ios_button_background"
-            style="@style/Widget.MaterialComponents.Button"/>
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:layout_gravity="center_horizontal"
+            style="@style/Widget.MaterialComponents.Button.Icon"
+            app:icon="@drawable/ic_check"
+            app:iconSize="24dp"
+            app:iconTint="@android:color/white"
+            app:backgroundTint="#0e5d9d"
+            app:cornerRadius="28dp"/>
     </LinearLayout>
 </ScrollView>
