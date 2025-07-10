@@ -20,8 +20,7 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="16dp"
             app:counterEnabled="true"
-            app:counterMaxLength="20"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+            app:counterMaxLength="20">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/et_task_name"
@@ -80,8 +79,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="选择时间"
-                    android:textColor="#FF0000"
-                    style="@style/Widget.AppCompat.Button.Borderless"/>
+                    android:textColor="#0e5d9d" />
 
                 <TextView
                     android:id="@+id/tv_selected_time"
@@ -101,14 +99,13 @@
             android:layout_marginTop="24dp">
 
             <Button
-                android:id="@+id/btn_cancel"
+                android:id="@+id/btn_delete"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="取消"
+                android:text="删除"
                 android:layout_marginEnd="8dp"
-                android:textColor="#FF0000"
-                style="@style/Widget.AppCompat.Button.Borderless"/>
+                android:textColor="#FF0000" />
 
             <Button
                 android:id="@+id/btn_save"
@@ -117,7 +114,7 @@
                 android:layout_weight="1"
                 android:text="保存"
                 android:layout_marginStart="8dp"
-                style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+                android:background="#0e5d9d" />
         </LinearLayout>
 
     </LinearLayout>

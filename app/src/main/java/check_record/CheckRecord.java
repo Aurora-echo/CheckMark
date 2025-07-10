@@ -232,13 +232,17 @@ public class CheckRecord extends AppCompatActivity {
      * 计算任务完成次数
      */
     private void calculate_TaskDone_Count() {
+        Log.i(TAG,"入了");
         String tasksJson = sp.getString("tasks", "[]");
         Type type = new TypeToken<List<Map<String, Object>>>(){}.getType();
         List<Map<String, Object>> tasks = new Gson().fromJson(tasksJson, type);
 
         for (Map<String, Object> task : tasks) {
+            Log.i(TAG,"进了for");
             Object idObj = task.get("id");
             int id = idObj instanceof Double ? ((Double) idObj).intValue() : (Integer) idObj;
+            Log.i(TAG,"id="+id);
+            Log.i(TAG,"doubletaskId="+doubletaskId);
             if (id == doubletaskId) {
                 Log.i(TAG,"开始计算完成次数");
                 List<String> records = (List<String>) task.get("completionRecords");
@@ -251,7 +255,6 @@ public class CheckRecord extends AppCompatActivity {
                     tvCount.setText(""+task_done_count);   //显示完成次数
                 }
             }
-
         }
     }
 

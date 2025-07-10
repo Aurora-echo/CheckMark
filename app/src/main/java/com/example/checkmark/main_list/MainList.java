@@ -172,9 +172,7 @@ public class MainList extends AppCompatActivity {
      * 显示完成状态提示
      */
     private void showCompletionStatus(int position) {
-        String message = CheckList.get(position).isCompleted()
-                ? "当日已完成~"
-                : "今天还没完成哦~";
+        String message = CheckList.get(position).isCompleted() ? "当日已完成~" : "今天还没完成哦~";
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
     }
 

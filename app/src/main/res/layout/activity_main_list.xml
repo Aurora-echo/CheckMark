@@ -5,6 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#FAFAFA"
+    android:layout_marginTop="10dp"
     tools:context=".main_list.MainList">
 
     <!-- 顶部日期时间栏 -->
@@ -12,10 +13,9 @@
         android:id="@+id/header"
         android:layout_width="match_parent"
         android:layout_height="72dp"
-        android:background="#FFFFFF"
         android:paddingLeft="24dp"
         android:paddingRight="24dp"
-        android:paddingTop="16dp">
+        android:paddingTop="18dp">
 
         <!-- 日期显示（大号日期+小号月份年份） -->
         <LinearLayout

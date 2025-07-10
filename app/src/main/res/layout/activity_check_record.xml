@@ -26,8 +26,12 @@
             android:textStyle="bold"
             android:gravity="center_vertical"
             android:paddingLeft="16dp"
-            android:paddingRight="16dp"
             android:textColor="#000000"/>
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:layout_weight="1"/>
 
         <!-- iOS风格设置按钮 -->
         <Button
@@ -36,8 +40,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="设置"
-            android:layout_marginLeft="80dp"
-            android:textColor="#007AFF"
+            android:textColor="#0e5d9d"
             android:background="@android:color/transparent"
             android:textSize="17sp" />
 
@@ -99,14 +102,14 @@
                 android:src="@drawable/knock"
                 android:visibility="gone"
                 android:layout_marginEnd="12dp"
-                app:tint="#34C759" />
+                app:tint="#0e5d9d" />
 
             <TextView
                 android:id="@+id/tv_reminder_info"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textSize="17sp"
-                android:textColor="#007AFF"
+                android:textColor="#0e5d9d"
                 android:text="未设置提醒"/>
         </LinearLayout>
     </LinearLayout>
@@ -124,9 +127,9 @@
             android:layout_width="match_parent"
             android:layout_height="300dp"
             app:mcv_showOtherDates="all"
-            app:mcv_selectionColor="#007AFF"
+            app:mcv_selectionColor="#0e5d9d"
             app:mcv_tileSize="36dp"
-            app:mcv_arrowColor="#007AFF"
+            app:mcv_arrowColor="#0e5d9d"
             tools:ignore="MissingClass" />
     </LinearLayout>
 
@@ -146,8 +149,8 @@
             android:padding="28dp"
             android:src="@drawable/done"
             android:scaleType="fitCenter"
-            app:backgroundTint="#007AFF"
-            app:rippleColor="#0055CC"
+            app:backgroundTint="#0e5d9d"
+            app:rippleColor="#0e5d9d"
             app:elevation="5dp"
             app:pressedTranslationZ="8dp"
             android:contentDescription="记录事项完成"/>
