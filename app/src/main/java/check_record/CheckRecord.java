@@ -123,8 +123,6 @@ public class CheckRecord extends AppCompatActivity {
         fabRecord.setOnClickListener(v -> {
             Toast.makeText(this, "请长按来完成任务记录~", Toast.LENGTH_SHORT).show();
         });
-
-        //calculate_TaskDone_Count(); //计算完成次数
     }
 
     /**
@@ -234,18 +232,28 @@ public class CheckRecord extends AppCompatActivity {
      * 计算任务完成次数
      */
     private void calculate_TaskDone_Count() {
-        Log.i(TAG,"开始计算完成次数");
-        List<String> records = (List<String>) task_detail.get("completionRecords");
-        if (records != null) {
-            int task_done_count=0;
-            for (String record : records) {
-                task_done_count = task_done_count+1;
+        String tasksJson = sp.getString("tasks", "[]");
+        Type type = new TypeToken<List<Map<String, Object>>>(){}.getType();
+        List<Map<String, Object>> tasks = new Gson().fromJson(tasksJson, type);
+
+        for (Map<String, Object> task : tasks) {
+            Object idObj = task.get("id");
+            int id = idObj instanceof Double ? ((Double) idObj).intValue() : (Integer) idObj;
+            if (id == doubletaskId) {
+                Log.i(TAG,"开始计算完成次数");
+                List<String> records = (List<String>) task.get("completionRecords");
+                if (records != null) {
+                    int task_done_count=0;
+                    for (String record : records) {
+                        task_done_count = task_done_count+1;
+                    }
+                    Log.i(TAG,"计算完成次数结束，完成了"+task_done_count+"次");
+                    tvCount.setText(""+task_done_count);   //显示完成次数
+                }
             }
-            Log.i(TAG,"计算完成次数结束，完成了"+task_done_count+"次");
-            tvCount.setText(""+task_done_count);   //显示完成次数
+
         }
     }
-
 
     /**
      * 记录任务完成
@@ -259,11 +267,14 @@ public class CheckRecord extends AppCompatActivity {
             Toast.makeText(this, "今天已记录完成", Toast.LENGTH_SHORT).show();
             // 设置结果表示数据已更新
             setResult(RESULT_OK);
+            //这里有一点bug，记录完成后再次计算，但是task还是旧的，所以次数不会增加
             calculate_TaskDone_Count(); // 更新完成次数
+
             /**
              * 任务当天已完成，取消当天闹钟，设置下一天的闹钟,还没有实现，不会啊
              * 传一个时间的，不用传日期的，因为闹钟是每天提醒的
              * **/
+
         } else {
             Toast.makeText(this, "今日已记录过", Toast.LENGTH_SHORT).show();
         }
