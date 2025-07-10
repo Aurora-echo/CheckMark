@@ -4,52 +4,46 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:paddingLeft="8dp"
-    android:paddingRight="8dp"
-    android:paddingTop="6dp"
-    android:paddingBottom="6dp">
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp">
 
-    <!-- 卡片容器 -->
     <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="6dp"
-        app:cardElevation="1dp"
-        app:cardCornerRadius="8dp"
+        android:layout_marginBottom="8dp"
+        app:cardElevation="2dp"
+        app:cardCornerRadius="4dp"
         app:cardUseCompatPadding="true"
-        app:cardBackgroundColor="@color/white"
-        android:foreground="?attr/selectableItemBackground">
+        app:cardBackgroundColor="#FFFFFF">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:background="?attr/selectableItemBackground"
-            android:paddingLeft="16dp"
-            android:paddingRight="16dp"
-            android:paddingTop="14dp"
-            android:paddingBottom="14dp"
-            android:minHeight="56dp">
+            android:padding="16dp"
+            android:minHeight="48dp">
 
-            <!-- 状态图标 -->
+            <!-- 复选框 -->
             <ImageView
                 android:id="@+id/todo_status"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:layout_marginEnd="16dp"
+                android:layout_marginRight="16dp"
                 android:layout_gravity="center_vertical"
-                android:src="@drawable/ios_checkbox_selector" />
+                android:src="@drawable/ios_checkbox_selector"/>
 
-            <!-- 待办文本 -->
+            <!-- 待办文本 - 修正部分 -->
             <TextView
                 android:id="@+id/todo_text"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
+                android:text="Clean bad room"
+                android:textColor="#000000"
                 android:textSize="16sp"
-                android:textColor="@color/colorPrimaryDark"
                 android:gravity="center_vertical"
-                android:lineSpacingExtra="2dp"/>
+                android:lines="1"
+                android:ellipsize="end"/>
         </LinearLayout>
     </androidx.cardview.widget.CardView>
 </LinearLayout>

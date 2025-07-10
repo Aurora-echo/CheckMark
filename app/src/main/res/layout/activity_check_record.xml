@@ -9,30 +9,18 @@
     android:paddingLeft="16dp"
     android:paddingRight="16dp">
 
-    <!-- iOS风格设置按钮 -->
-    <Button
-        android:id="@+id/Check_Setting"
-        android:layout_gravity="right"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="设置"
-        android:textColor="#007AFF"
-        android:background="@android:color/transparent"
-        android:textSize="17sp"
-        android:layout_marginTop="8dp"
-        android:layout_marginBottom="16dp"/>
-
     <!-- 事项名称标题 - iOS风格卡片 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
+        android:orientation="horizontal"
         android:background="@drawable/ios_card_background"
+        android:layout_marginTop="30dp"
         android:layout_marginBottom="24dp">
 
         <TextView
             android:id="@+id/tv_task_name"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="72dp"
             android:textSize="22sp"
             android:textStyle="bold"
@@ -40,6 +28,52 @@
             android:paddingLeft="16dp"
             android:paddingRight="16dp"
             android:textColor="#000000"/>
+
+        <!-- iOS风格设置按钮 -->
+        <Button
+            android:id="@+id/Check_Setting"
+            android:gravity="center_vertical"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="设置"
+            android:layout_marginLeft="80dp"
+            android:textColor="#007AFF"
+            android:background="@android:color/transparent"
+            android:textSize="17sp" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/check_done_total_count"
+        android:layout_marginBottom="24dp">
+
+        <TextView
+            android:id="@+id/tv_count"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="12:32"
+            android:layout_alignParentRight="true"
+            android:layout_centerVertical="true"
+            android:textColor="#FFFFFF"
+            android:textSize="32sp"
+            android:textStyle="bold"
+            android:layout_gravity="center_horizontal"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="累计打卡"
+            android:layout_alignParentRight="true"
+            android:layout_centerVertical="true"
+            android:layout_marginBottom="8dp"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:layout_gravity="center_horizontal"/>
+
     </LinearLayout>
 
     <!-- 提醒信息显示区域 - iOS风格卡片 -->
@@ -114,7 +148,7 @@
             android:scaleType="fitCenter"
             app:backgroundTint="#007AFF"
             app:rippleColor="#0055CC"
-            app:elevation="4dp"
+            app:elevation="5dp"
             app:pressedTranslationZ="8dp"
             android:contentDescription="记录事项完成"/>
     </FrameLayout>

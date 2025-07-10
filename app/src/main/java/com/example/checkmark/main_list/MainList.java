@@ -14,6 +14,7 @@ import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.checkmark.R;
@@ -56,6 +57,23 @@ public class MainList extends AppCompatActivity {
 
         setContentView(R.layout.activity_main_list);
         Log.d(TAG, "Activity创建");
+
+        // 获取当前日期和时间显示在左上角和右上角
+        // 在Activity中设置日期时间
+        TextView tvDay = findViewById(R.id.tv_day);
+        TextView tvMonth = findViewById(R.id.tv_month);
+        TextView tvYear = findViewById(R.id.tv_year);
+        TextView tvTime = findViewById(R.id.tv_time);
+
+        SimpleDateFormat dayFormat = new SimpleDateFormat("dd", Locale.ENGLISH);
+        SimpleDateFormat monthFormat = new SimpleDateFormat("MMMM", Locale.ENGLISH);
+        SimpleDateFormat yearFormat = new SimpleDateFormat("yyyy", Locale.ENGLISH);
+        SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm", Locale.ENGLISH);
+
+        tvDay.setText(dayFormat.format(new Date()));
+        tvMonth.setText(monthFormat.format(new Date()));
+        tvYear.setText(yearFormat.format(new Date()));
+        tvTime.setText(timeFormat.format(new Date()));
 
         // 初始化本地存储
         sp = getSharedPreferences(SP_NAME, MODE_PRIVATE);
