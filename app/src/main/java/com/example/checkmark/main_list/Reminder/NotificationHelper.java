@@ -51,7 +51,7 @@ public class NotificationHelper {
         // 1. 创建点击通知后要跳转的Intent
         // 跳转到CheckRecord(详情页)，并带上任务数据
         Intent intent = new Intent(context, CheckRecord.class);
-        intent.putExtra("id", taskId);       // 传递任务ID
+        intent.putExtra("id", Double.valueOf(taskId));       // 传递任务ID
         intent.putExtra("taskName", taskName); // 传递任务名称
 
         // 设置标志位：在新任务栈中打开，并清除之前的同类Activity

@@ -71,7 +71,6 @@ public class Add_Check extends AppCompatActivity {
                 loadTask();
                 Toast.makeText(this, "开始导入数据", Toast.LENGTH_SHORT).show();
             } else {
-                Toast.makeText(this, "还需点击 " + (5 - clickCount) + " 次", Toast.LENGTH_SHORT).show();
                 // 3秒内不继续点击就重置计数器
                 tvTitleName.postDelayed(() -> clickCount = 0, 3000);
             }
@@ -191,9 +190,6 @@ public class Add_Check extends AppCompatActivity {
      * */
     private void loadTask(){
         List<Map<String, Object>> testTasks = new ArrayList<>();
-        // 清空现有ID计数器（从1开始）
-        //SharedPreferences idSp = getSharedPreferences("task_ids", MODE_PRIVATE);
-        //idSp.edit().putInt("last_id", 0).apply();
 
         // 任务1：吃维生素（有提醒）
         Map<String, Object> task1 = new HashMap<>();
@@ -209,7 +205,7 @@ public class Add_Check extends AppCompatActivity {
                 "2025-06-30 21:13:19", "2025-07-01 14:37:26", "2025-07-02 18:07:43",
                 "2025-07-03 14:07:37", "2025-07-04 11:42:56", "2025-07-06 17:25:17",
                 "2025-07-07 09:07:26", "2025-07-08 13:39:37", "2025-07-09 14:06:02",
-                "2025-07-10 13:33:56"
+                "2025-07-10 13:33:56", "2025-07-11 13:48:56"
         ));
         testTasks.add(task1);
 
