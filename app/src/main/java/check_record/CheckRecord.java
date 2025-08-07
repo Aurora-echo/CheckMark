@@ -23,6 +23,10 @@ import com.prolificinteractive.materialcalendarview.MaterialCalendarView;
 
 import java.lang.reflect.Type;
 import java.text.SimpleDateFormat;
+import java.time.DayOfWeek;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -44,7 +48,7 @@ public class CheckRecord extends AppCompatActivity {
     private MaterialCalendarView calendarView;
     private FloatingActionButton fabRecord;
     private ImageView ivReminderIcon;
-    private TextView tvReminderInfo, tvTaskName,tvCount;
+    private TextView tvReminderInfo, tvTaskName,tvCount,tvMonthCount,tvWeekCount;
     private Button btnSetting;
 
     // 数据相关
@@ -113,6 +117,8 @@ public class CheckRecord extends AppCompatActivity {
 
         //记录完成次数按钮
         tvCount = findViewById(R.id.tv_count);
+        tvMonthCount = findViewById(R.id.tv_Month_Count);
+        tvWeekCount = findViewById(R.id.tv_Week_Count);
 
         // 记录按钮
         fabRecord = findViewById(R.id.fab_record);
@@ -246,6 +252,7 @@ public class CheckRecord extends AppCompatActivity {
             if (id == doubletaskId) {
                 Log.i(TAG,"开始计算完成次数");
                 List<String> records = (List<String>) task.get("completionRecords");
+                //计算总共打卡次数
                 if (records != null) {
                     int task_done_count=0;
                     for (String record : records) {
@@ -254,6 +261,14 @@ public class CheckRecord extends AppCompatActivity {
                     Log.i(TAG,"计算完成次数结束，完成了"+task_done_count+"次");
                     tvCount.setText(""+task_done_count);   //显示完成次数
                 }
+                //计算当月打卡次数
+                int task_done_month_count = getCurrentMonthRecordCount(records);
+                Log.i(TAG,"本月完成次数计算结束，完成了"+task_done_month_count+"次");
+                tvMonthCount.setText(""+task_done_month_count);
+                //计算本周打卡次数
+                int task_done_week_count = getCurrentWeekRecordCount(records);
+                Log.i(TAG,"本周完成次数计算结束，完成了"+task_done_week_count+"次");
+                tvWeekCount.setText(""+task_done_week_count);
             }
         }
     }
@@ -303,4 +318,36 @@ public class CheckRecord extends AppCompatActivity {
         Log.i(TAG, "onResume: 刷新Record()");
         super.onResume();
     }
+
+    public int getCurrentMonthRecordCount(List<String> dateTimeList) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        LocalDateTime now = LocalDateTime.now();
+        int currentMonth = now.getMonthValue();
+        int currentYear = now.getYear();
+
+        return (int) dateTimeList.stream()
+                .map(str -> LocalDateTime.parse(str, formatter))
+                .filter(dateTime ->
+                        dateTime.getMonthValue() == currentMonth &&
+                                dateTime.getYear() == currentYear
+                )
+                .count();
+    }
+
+    public int getCurrentWeekRecordCount(List<String> dateTimeList) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime startOfWeek = now.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+                .withHour(0).withMinute(0).withSecond(0);
+        LocalDateTime endOfWeek = startOfWeek.plusDays(6).withHour(23).withMinute(59).withSecond(59);
+
+        return (int) dateTimeList.stream()
+                .map(str -> LocalDateTime.parse(str, formatter))
+                .filter(dateTime ->
+                        !dateTime.isBefore(startOfWeek) &&
+                                !dateTime.isAfter(endOfWeek)
+                )
+                .count();
+    }
+
 }
