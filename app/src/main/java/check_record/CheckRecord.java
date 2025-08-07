@@ -14,13 +14,20 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.checkmark.R;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.gson.Gson;
+import com.google.gson.internal.LinkedTreeMap;
 import com.google.gson.reflect.TypeToken;
 import com.prolificinteractive.materialcalendarview.CalendarDay;
 import com.prolificinteractive.materialcalendarview.DayViewDecorator;
 import com.prolificinteractive.materialcalendarview.DayViewFacade;
 import com.prolificinteractive.materialcalendarview.MaterialCalendarView;
 
+import java.lang.reflect.Type;
 import java.text.SimpleDateFormat;
+import java.time.DayOfWeek;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAdjusters;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
@@ -41,11 +48,12 @@ public class CheckRecord extends AppCompatActivity {
     private MaterialCalendarView calendarView;
     private FloatingActionButton fabRecord;
     private ImageView ivReminderIcon;
-    private TextView tvReminderInfo, tvTaskName;
+    private TextView tvReminderInfo, tvTaskName,tvCount,tvMonthCount,tvWeekCount;
     private Button btnSetting;
 
     // 数据相关
-    private int taskId, taskPosition;
+    private int  taskPosition;
+    private double doubletaskId;
     private String taskName;
     private boolean needsReminder;  // 新增：是否需要提醒标志
     private String reminderTime;    // 新增：提醒时间
@@ -55,6 +63,8 @@ public class CheckRecord extends AppCompatActivity {
     // 日志标签
     private static final String TAG = "Log.CheckRecord";
     private static final String SP_NAME = "CheckListInfo";
+
+    LinkedTreeMap<String, Object> task_detail;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -89,7 +99,8 @@ public class CheckRecord extends AppCompatActivity {
             Intent intent = new Intent(CheckRecord.this, checksetting.class);
 
             // 添加所有必要参数
-            intent.putExtra("id", taskId);               // 任务ID
+            intent.putExtra("id", doubletaskId);               // 任务ID
+            Log.i(TAG,"进入事项详情处放入设置intent时候的id:"+doubletaskId);
             intent.putExtra("taskName", taskName);       // 任务名称
             intent.putExtra("needsReminder", needsReminder); // 是否需要提醒
             intent.putExtra("reminderTime", reminderTime);   // 提醒时间(可能为null)
@@ -103,6 +114,11 @@ public class CheckRecord extends AppCompatActivity {
         // 提醒信息区域
         ivReminderIcon = findViewById(R.id.iv_reminder_icon);
         tvReminderInfo = findViewById(R.id.tv_reminder_info);
+
+        //记录完成次数按钮
+        tvCount = findViewById(R.id.tv_count);
+        tvMonthCount = findViewById(R.id.tv_Month_Count);
+        tvWeekCount = findViewById(R.id.tv_Week_Count);
 
         // 记录按钮
         fabRecord = findViewById(R.id.fab_record);
@@ -121,47 +137,36 @@ public class CheckRecord extends AppCompatActivity {
     private void getIntentData() {
         taskPosition = getIntent().getIntExtra("position", -1);
         taskName = getIntent().getStringExtra("taskName");
-        taskId = getIntent().getIntExtra("id", -1);
-
+        String taskData = getIntent().getStringExtra("taskData");
+        // 指定反序列化的目标类型
+        Type type = new TypeToken<LinkedTreeMap<String, Object>>() {}.getType();
+        // 使用 Gson 解析 JSON
+        task_detail = new Gson().fromJson(taskData, type);
+        doubletaskId=getIntent().getDoubleExtra("id", -1);
         // 设置任务名称
         tvTaskName.setText(taskName);
-
-        Log.d(TAG, "收到数据 - 位置:" + taskPosition + ", ID:" + taskId + ", 名称:" + taskName);
+        Log.i(TAG, "收到数据,位置:" + taskPosition + ", ID:" + doubletaskId + ", 名称:" + taskName);
+        Log.i(TAG, "taskData:" + task_detail );
     }
 
     /**
      * 加载任务数据（优化后的加载逻辑）
      */
     private void loadData() {
-        // 情况1：Intent中直接包含预加载的任务数据（最快路径）
         if (getIntent().hasExtra("taskData")) {
+            Log.i(TAG,"从intent文件中load任务详情");
             String taskJson = getIntent().getStringExtra("taskData");
-            Map<String, Object> task = new Gson().fromJson(taskJson,
-                    new TypeToken<Map<String, Object>>(){}.getType());
-
+            Map<String, Object> task = new Gson().fromJson(taskJson, new TypeToken<Map<String, Object>>(){}.getType());
+            //加载事项信息
             loadReminderInfo(task);
+            //加载完成数据
             loadCompletedDates(task);
+            //加载完成次数数据
+            calculate_TaskDone_Count();
             return;
+        }else{
+            finish(); // 如果没有数据，则直接结束当前Activity
         }
-
-        // 情况2：需要从SharedPreferences加载（较慢）
-        new Thread(() -> {
-            // 在后台线程执行耗时操作
-            String tasksJson = sp.getString("tasks", "[]");
-            List<Map<String, Object>> tasks = new Gson().fromJson(tasksJson,
-                    new TypeToken<List<Map<String, Object>>>(){}.getType());
-
-            Map<String, Object> task = findTaskById(tasks, taskId);
-
-            runOnUiThread(() -> {
-                if (task != null) {
-                    loadReminderInfo(task);
-                    loadCompletedDates(task);
-                } else {
-                    Toast.makeText(this, "加载任务数据失败", Toast.LENGTH_SHORT).show();
-                }
-            });
-        }).start();
     }
 
     /**
@@ -184,13 +189,10 @@ public class CheckRecord extends AppCompatActivity {
      */
     private void loadReminderInfo(Map<String, Object> task) {
         // 获取提醒设置
-        needsReminder = task.containsKey("needsReminder")
-                && (boolean) task.get("needsReminder");
+        needsReminder = task.containsKey("needsReminder") && (boolean) task.get("needsReminder");
 
         // 获取提醒时间
-        reminderTime = task.containsKey("reminderTime")
-                ? (String) task.get("reminderTime")
-                : null;
+        reminderTime = task.containsKey("reminderTime") ? (String) task.get("reminderTime") : null;
 
         // 更新UI
         if (needsReminder && reminderTime != null) {
@@ -233,6 +235,45 @@ public class CheckRecord extends AppCompatActivity {
     }
 
     /**
+     * 计算任务完成次数
+     */
+    private void calculate_TaskDone_Count() {
+        Log.i(TAG,"入了");
+        String tasksJson = sp.getString("tasks", "[]");
+        Type type = new TypeToken<List<Map<String, Object>>>(){}.getType();
+        List<Map<String, Object>> tasks = new Gson().fromJson(tasksJson, type);
+
+        for (Map<String, Object> task : tasks) {
+            Log.i(TAG,"进了for");
+            Object idObj = task.get("id");
+            int id = idObj instanceof Double ? ((Double) idObj).intValue() : (Integer) idObj;
+            Log.i(TAG,"id="+id);
+            Log.i(TAG,"doubletaskId="+doubletaskId);
+            if (id == doubletaskId) {
+                Log.i(TAG,"开始计算完成次数");
+                List<String> records = (List<String>) task.get("completionRecords");
+                //计算总共打卡次数
+                if (records != null) {
+                    int task_done_count=0;
+                    for (String record : records) {
+                        task_done_count = task_done_count+1;
+                    }
+                    Log.i(TAG,"计算完成次数结束，完成了"+task_done_count+"次");
+                    tvCount.setText(""+task_done_count);   //显示完成次数
+                }
+                //计算当月打卡次数
+                int task_done_month_count = getCurrentMonthRecordCount(records);
+                Log.i(TAG,"本月完成次数计算结束，完成了"+task_done_month_count+"次");
+                tvMonthCount.setText(""+task_done_month_count);
+                //计算本周打卡次数
+                int task_done_week_count = getCurrentWeekRecordCount(records);
+                Log.i(TAG,"本周完成次数计算结束，完成了"+task_done_week_count+"次");
+                tvWeekCount.setText(""+task_done_week_count);
+            }
+        }
+    }
+
+    /**
      * 记录任务完成
      */
     private void recordCompletion() {
@@ -244,10 +285,14 @@ public class CheckRecord extends AppCompatActivity {
             Toast.makeText(this, "今天已记录完成", Toast.LENGTH_SHORT).show();
             // 设置结果表示数据已更新
             setResult(RESULT_OK);
+            //这里有一点bug，记录完成后再次计算，但是task还是旧的，所以次数不会增加
+            calculate_TaskDone_Count(); // 更新完成次数
+
             /**
              * 任务当天已完成，取消当天闹钟，设置下一天的闹钟,还没有实现，不会啊
              * 传一个时间的，不用传日期的，因为闹钟是每天提醒的
              * **/
+
         } else {
             Toast.makeText(this, "今日已记录过", Toast.LENGTH_SHORT).show();
         }
@@ -267,4 +312,42 @@ public class CheckRecord extends AppCompatActivity {
             view.setBackgroundDrawable(getResources().getDrawable(R.drawable.ios_button_background));
         }
     }
+
+    @Override
+    protected void onResume() {
+        Log.i(TAG, "onResume: 刷新Record()");
+        super.onResume();
+    }
+
+    public int getCurrentMonthRecordCount(List<String> dateTimeList) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        LocalDateTime now = LocalDateTime.now();
+        int currentMonth = now.getMonthValue();
+        int currentYear = now.getYear();
+
+        return (int) dateTimeList.stream()
+                .map(str -> LocalDateTime.parse(str, formatter))
+                .filter(dateTime ->
+                        dateTime.getMonthValue() == currentMonth &&
+                                dateTime.getYear() == currentYear
+                )
+                .count();
+    }
+
+    public int getCurrentWeekRecordCount(List<String> dateTimeList) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime startOfWeek = now.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+                .withHour(0).withMinute(0).withSecond(0);
+        LocalDateTime endOfWeek = startOfWeek.plusDays(6).withHour(23).withMinute(59).withSecond(59);
+
+        return (int) dateTimeList.stream()
+                .map(str -> LocalDateTime.parse(str, formatter))
+                .filter(dateTime ->
+                        !dateTime.isBefore(startOfWeek) &&
+                                !dateTime.isAfter(endOfWeek)
+                )
+                .count();
+    }
+
 }

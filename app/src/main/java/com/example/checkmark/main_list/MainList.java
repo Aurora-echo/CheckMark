@@ -14,6 +14,7 @@ import android.provider.Settings;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.checkmark.R;
@@ -48,6 +49,7 @@ public class MainList extends AppCompatActivity {
     private static final String SP_NAME = "CheckListInfo";
     private static final String TASKS_KEY = "tasks";
     private static final String TAG = "Log.MainList";
+    List<Map<String, Object>> tasks; //一个包含了所有任务的列表
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,6 +57,23 @@ public class MainList extends AppCompatActivity {
 
         setContentView(R.layout.activity_main_list);
         Log.d(TAG, "Activity创建");
+
+        // 获取当前日期和时间显示在左上角和右上角
+        // 在Activity中设置日期时间
+        TextView tvDay = findViewById(R.id.tv_day);
+        TextView tvMonth = findViewById(R.id.tv_month);
+        TextView tvYear = findViewById(R.id.tv_year);
+        TextView tvTime = findViewById(R.id.tv_time);
+
+        SimpleDateFormat dayFormat = new SimpleDateFormat("dd", Locale.ENGLISH);
+        SimpleDateFormat monthFormat = new SimpleDateFormat("MMMM", Locale.ENGLISH);
+        SimpleDateFormat yearFormat = new SimpleDateFormat("yyyy", Locale.ENGLISH);
+        SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm", Locale.ENGLISH);
+
+        tvDay.setText(dayFormat.format(new Date()));
+        tvMonth.setText(monthFormat.format(new Date()));
+        tvYear.setText(yearFormat.format(new Date()));
+        tvTime.setText(timeFormat.format(new Date()));
 
         // 初始化本地存储
         sp = getSharedPreferences(SP_NAME, MODE_PRIVATE);
@@ -103,6 +122,7 @@ public class MainList extends AppCompatActivity {
                 showCompletionStatus(position);
             }
         });
+
         recyclerView.setAdapter(CheckAdapter);
 
         // 设置添加按钮
@@ -110,43 +130,38 @@ public class MainList extends AppCompatActivity {
         btnAdd.setOnClickListener(v -> {
             startActivityForResult(new Intent(MainList.this, Add_Check.class), 1);
         });
+
     }
 
     /**
      * 打开详情页面
      * @param position 点击的位置
-     *
      * 优化点：预先加载任务数据并传递，避免详情页重复解析
      */
     private void openCheckRecord(int position) {
-        // 获取完整任务数据
         Map<String, Object> task = getTaskFromSharedPrefs(CheckList.get(position).getId());
-
         Intent intent = new Intent(this, CheckRecord.class);
-        intent.putExtra("id", CheckList.get(position).getId());
+        intent.putExtra("id", (double) task.get("id"));
         intent.putExtra("position", position);
-        intent.putExtra("taskName", CheckList.get(position).getText());
-
-        // 如果找到任务数据，直接传递序列化后的JSON
+        intent.putExtra("taskName", (String) task.get("name"));
+        // 如果没找到任务数据，直接传递序列化后的JSON
         if (task != null) {
+            Log.i(TAG,"TASK的类型："+task.getClass());
             intent.putExtra("taskData", new Gson().toJson(task));
         }
-
         startActivityForResult(intent,1);
     }
 
     /**
      * 从SharedPreferences获取单个任务数据
+     * 传入taskid获取事项详细信息
      */
     private Map<String, Object> getTaskFromSharedPrefs(int taskId) {
-        String tasksJson = sp.getString(TASKS_KEY, "[]");
-        Type type = new TypeToken<List<Map<String, Object>>>(){}.getType();
-        List<Map<String, Object>> tasks = new Gson().fromJson(tasksJson, type);
-
         for (Map<String, Object> task : tasks) {
             Object idObj = task.get("id");
             int id = idObj instanceof Double ? ((Double) idObj).intValue() : (Integer) idObj;
             if (id == taskId) {
+                Log.i(TAG,"点击了列表某项，获取到详情发过去,task:"+task);
                 return task;
             }
         }
@@ -157,9 +172,7 @@ public class MainList extends AppCompatActivity {
      * 显示完成状态提示
      */
     private void showCompletionStatus(int position) {
-        String message = CheckList.get(position).isCompleted()
-                ? "当日已完成~"
-                : "今天还没完成哦~";
+        String message = CheckList.get(position).isCompleted() ? "当日已完成~" : "今天还没完成哦~";
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
     }
 
@@ -169,30 +182,24 @@ public class MainList extends AppCompatActivity {
     private void loadTasksFromSharedPreferences() {
         String tasksJson = sp.getString(TASKS_KEY, "[]");
         Type type = new TypeToken<List<Map<String, Object>>>(){}.getType();
-        List<Map<String, Object>> tasks = new Gson().fromJson(tasksJson, type);
-
+        tasks = new Gson().fromJson(tasksJson, type);
         // 获取今天日期用于检查完成状态
         String today = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
                 .format(new Date());
-
         CheckList.clear();
         for (Map<String, Object> task : tasks) {
             // 解析任务ID
             Object idObj = task.get("id");
             int id = idObj instanceof Double ? ((Double) idObj).intValue() : (Integer) idObj;
-
             // 检查今日是否完成
             boolean isCompletedToday = checkIfCompletedToday(task, today);
-
             // 添加到列表
             CheckList.add(new CheckItem(id, (String) task.get("name"), isCompletedToday));
         }
-
         // 刷新列表
         if (CheckAdapter != null) {
             CheckAdapter.notifyDataSetChanged();
         }
-
         // 设置提醒
         scheduleAllReminders();
     }
@@ -253,6 +260,7 @@ public class MainList extends AppCompatActivity {
         super.onResume();
         cancelAllReminders();
         scheduleAllReminders(); // 确保提醒设置正确
+        loadTasksFromSharedPreferences(); // 刷新列表
     }
 
     /**

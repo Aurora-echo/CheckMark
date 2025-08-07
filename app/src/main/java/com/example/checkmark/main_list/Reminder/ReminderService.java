@@ -64,7 +64,7 @@ public class ReminderService extends BroadcastReceiver {
                 Log.d(TAG, "收到提醒: 任务ID=" + taskId + ", 名称=" + taskName);
 
                 // 4. 使用NotificationHelper发送通知
-                String message = "今天"+ taskName+"还没有完成！不要忘记了！";
+                String message = "今天"+ taskName+"任务有没有完成！不要忘记了！";
                 NotificationHelper.sendReminderNotification(context, taskId, taskName, message);
 
                 // 5. 如果需要重复提醒，设置第二天的闹钟

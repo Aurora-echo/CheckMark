@@ -2,7 +2,9 @@ package checksetting;
 
 import android.app.TimePickerDialog;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
@@ -17,10 +19,17 @@ import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.example.checkmark.R;
+import com.example.checkmark.main_list.MainList;
 import com.google.android.material.textfield.TextInputEditText;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.Calendar;
 import java.util.Locale;
+
+import check_record.CheckRecord;
 
 public class checksetting extends AppCompatActivity {
         private TextInputEditText etTaskName;
@@ -29,6 +38,11 @@ public class checksetting extends AppCompatActivity {
         private Button btnTimePicker;
         private TextView tvSelectedTime;
         private String selectedTime = null;
+        private static final String SP_NAME = "CheckListInfo";
+        private static final String TASKS_KEY = "tasks";
+        private SharedPreferences sp;
+        private static String TAG = "Log.checksetting";
+        private double taskId;
 
         @Override
         protected void onCreate(Bundle savedInstanceState) {
@@ -52,19 +66,19 @@ public class checksetting extends AppCompatActivity {
             btnTimePicker = findViewById(R.id.btn_time_picker);
             tvSelectedTime = findViewById(R.id.tv_selected_time);
 
-            findViewById(R.id.btn_cancel).setOnClickListener(v -> finish());
+            findViewById(R.id.btn_delete).setOnClickListener(v -> deleteSaveToSPfile(taskId));
             findViewById(R.id.btn_save).setOnClickListener(v -> saveSettings());
         }
 
         private void setupInitialData() {
             // 从Intent获取数据
             Intent intent = getIntent();
+            taskId = intent.getDoubleExtra("id", -1);
+            Log.i(TAG,"从事项详情给的intent取出来的id，taskId："+taskId);
             etTaskName.setText(intent.getStringExtra("taskName"));
-
             boolean needsReminder = intent.getBooleanExtra("needsReminder", false);
             switchReminder.setChecked(needsReminder);
             timePickerContainer.setVisibility(needsReminder ? View.VISIBLE : View.GONE);
-
             String time = intent.getStringExtra("reminderTime");
             if (time != null) {
                 selectedTime = time;
@@ -81,7 +95,6 @@ public class checksetting extends AppCompatActivity {
                     tvSelectedTime.setText("未选择");
                 }
             });
-
             // 时间选择按钮
             btnTimePicker.setOnClickListener(v -> showTimePickerDialog());
         }
@@ -115,14 +128,89 @@ public class checksetting extends AppCompatActivity {
                 Toast.makeText(this, "需要提醒又不选时间？", Toast.LENGTH_SHORT).show();
                 return;
             }
-
-            // 保存逻辑...
-//            Intent result = new Intent();
-//            result.putExtra("taskName", name);
-//            result.putExtra("needsReminder", needsReminder);
-//            result.putExtra("reminderTime", time);
-//            setResult(RESULT_OK, result);
-            Toast.makeText(this, "还没实现保存逻辑，要不你来做？", Toast.LENGTH_SHORT).show();
-            finish();
+            // 保存逻辑
+            saveSettingsToSPfile(taskId,name,needsReminder,time);
         }
+
+    private void saveSettingsToSPfile(double id, String name, boolean needsReminder, String time) {
+        Log.i(TAG,"开始执行修改保存，保存的数据是：id:"+id+",name:"+name+",needsReminder:"+needsReminder+",time:"+time);
+        // 获取 SharedPreferences
+        sp = getSharedPreferences(SP_NAME, MODE_PRIVATE);
+        String tasksJson = sp.getString(TASKS_KEY, "[]");
+        try {
+            // 解析 JSON 数组
+            JSONArray tasksArray = new JSONArray(tasksJson);
+            Log.i(TAG,"保存之前解析出来的数组，tasksArray:"+tasksArray);
+            // 遍历查找匹配 ID 的任务
+            for (int i = 0; i < tasksArray.length(); i++) {
+                JSONObject task = tasksArray.getJSONObject(i);
+                if (task.getDouble("id") == id) {
+                    // 更新任务属性
+                    task.put("name", name);
+                    task.put("needsReminder", needsReminder);
+
+                    // 根据 needsReminder 设置 reminderTime
+                    if (needsReminder) {
+                        task.put("reminderTime", time);
+                    } else {
+                        task.put("reminderTime", "");
+                    }
+                    break; // 找到后退出循环
+                }
+            }
+            Log.i(TAG,"保存之后的数组，tasksArray:"+tasksArray);
+            // 保存修改后的数据回 SharedPreferences
+            SharedPreferences.Editor editor = sp.edit();
+            editor.putString(TASKS_KEY, tasksArray.toString());
+            editor.apply();
+            Toast.makeText(this, "修改成功！", Toast.LENGTH_SHORT).show();
+            Intent intent = new Intent(this,MainList.class);
+            startActivity(intent);
+        } catch (JSONException e) {
+            e.printStackTrace();
+            // 处理 JSON 解析错误
+            Toast.makeText(this, "修改失败，请联系大神", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    private void deleteSaveToSPfile(double id){
+        Log.i(TAG, "开始执行删除，要删除的任务ID: " + id);
+        // 获取 SharedPreferences
+        sp = getSharedPreferences(SP_NAME, MODE_PRIVATE);
+        String tasksJson = sp.getString(TASKS_KEY, "[]");
+        try {
+            // 解析 JSON 数组
+            JSONArray tasksArray = new JSONArray(tasksJson);
+            Log.i(TAG, "删除前解析出的数组: " + tasksArray);
+
+            // 遍历查找匹配 ID 的任务
+            JSONArray newTasksArray = new JSONArray(); // 创建新数组存放保留的任务
+            boolean found = false;
+            for (int i = 0; i < tasksArray.length(); i++) {
+                JSONObject task = tasksArray.getJSONObject(i);
+                if (task.getDouble("id") != id) {
+                    // 如果ID不匹配，保留该任务
+                    newTasksArray.put(task);
+                } else {
+                    found = true;
+                }
+            }
+            if (found) {
+                Log.i(TAG, "删除后的数组: " + newTasksArray);
+                // 保存修改后的数据回 SharedPreferences
+                SharedPreferences.Editor editor = sp.edit();
+                editor.putString(TASKS_KEY, newTasksArray.toString());
+                editor.apply();
+                Toast.makeText(this, "删除成功！", Toast.LENGTH_SHORT).show();
+                Intent intent = new Intent(this, MainList.class);
+                startActivity(intent);
+            } else {
+                Toast.makeText(this, "未找到对应ID的任务", Toast.LENGTH_SHORT).show();
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+            Toast.makeText(this, "删除失败，请联系大神", Toast.LENGTH_SHORT).show();
+        }
+    }
+
 }
