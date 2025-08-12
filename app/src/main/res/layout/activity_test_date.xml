@@ -38,8 +38,15 @@
         android:hint="提醒时间"/>
 
     <Button
+        android:id="@+id/commit_date"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="提交到数据库"/>
+        android:text="新建任务"/>
+
+    <Button
+        android:id="@+id/commit_date2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="添加任务完成记录"/>
 
 </LinearLayout>

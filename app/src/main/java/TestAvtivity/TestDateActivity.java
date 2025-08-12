@@ -1,6 +1,10 @@
 package TestAvtivity;
 
+import android.annotation.SuppressLint;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -24,54 +28,89 @@ public class TestDateActivity extends AppCompatActivity {
     private AppDatabase db;
     private TaskDao taskDao;
     private TaskCompletionDao completionDao;
+    private static  final String TAG="MTING";
+    Button btn_commit_date,btn_add_record;
 
+    @SuppressLint("MissingInflatedId")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_test_date);
 
+        btn_commit_date = findViewById(R.id.commit_date);
+        btn_add_record = findViewById(R.id.commit_date2);
+
         //初始化数据库
         db = AppDatabase.getInstance(this);
         taskDao = db.taskDao();
         completionDao = db.completionDao();
 
-        //实例化操作
-        // 示例操作
-        new Thread(() -> {
-            // 1. 创建新任务
-            Task task = new Task("学习Room", "学习Android Room数据库");
-            taskDao.insertTask(task);
+        btn_commit_date.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
 
-            // 2. 记录任务完成
-            TaskCompletion completion = new TaskCompletion(task.taskId);
-            completion.notes = "学习了基本用法";
-            completion.durationMinutes = 30;
-            completionDao.insertCompletion(completion);
+                // 示例操作
+                new Thread(() -> {
+                    // 1. 创建新任务
+                    boolean needRemind = true;
+                    Date remindTime=new Date("2025/08/12 20:00");
+                    Task task = new Task("学习Room",needRemind,remindTime);
+                    taskDao.insertTask(task);
 
-            // 3. 查询任务完成次数
-            int totalCompletions = completionDao.getCompletionCountForTask(task.taskId);
+                    // 2. 查询所有任务
+                    List<Task> allTasks = taskDao.getAllTasks();
+                    Log.i(TAG,"创建完，所有的任务："+allTasks.toString());
 
-            // 4. 查询本周完成次数
-            Calendar calendar = Calendar.getInstance();
-            calendar.set(Calendar.DAY_OF_WEEK, calendar.getFirstDayOfWeek());
-            Date startOfWeek = calendar.getTime();
+                    //3.修改任务
+                    Task updateTask = taskDao.getTaskById(2);
+                    updateTask.setTitle("学习Room-3");
+                    taskDao.updateTask(updateTask);
 
-            calendar.add(Calendar.DAY_OF_WEEK, 6);
-            Date endOfWeek = calendar.getTime();
+                    // 4. 查询所有任务
+                    List<Task> allTasks_2 = taskDao.getAllTasks();
+                    Log.i(TAG,"更新完，所有的任务："+allTasks_2.toString());
 
-            int weeklyCompletions = completionDao.getWeeklyCompletionCount(
-                    task.taskId, startOfWeek, endOfWeek);
+                    // 4. 查询本周完成次数
+//                    Calendar calendar = Calendar.getInstance();
+//                    calendar.set(Calendar.DAY_OF_WEEK, calendar.getFirstDayOfWeek());
+//                    Date startOfWeek = calendar.getTime();
+//
+//                    calendar.add(Calendar.DAY_OF_WEEK, 6);
+//                    Date endOfWeek = calendar.getTime();
+//
+//                    int weeklyCompletions = completionDao.getWeeklyCompletionCount(
+//                            task.taskId, startOfWeek, endOfWeek);
 
-            // 5. 查询所有任务
-            List<Task> allTasks = taskDao.getAllTasks();
+                    // 在主线程更新UI
+                    runOnUiThread(() -> {
+                        // 更新UI代码...
+                    });
+                }).start();
+            }
+        });
 
-            // 在主线程更新UI
-            runOnUiThread(() -> {
-                // 更新UI代码...
-            });
-        }).start();
+        btn_add_record.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                new Thread(() ->{
+                    // 5. 插入记录任务完成
+                    TaskCompletion completion = new TaskCompletion(2);
+                    completionDao.insertCompletion(completion);
 
+                    // 6. 查询任务完成次数
+                    int totalCompletions = completionDao.getCompletionCountForTask(2);
+                    Log.i(TAG,"id为2的任务，完成了："+totalCompletions+"次");
+
+                    //7. 查询任务完成的时间记录
+                    List<Date> taskCompletionTimes = completionDao.getCompletionTimesForTask(2);
+                    for(Date completion_time:taskCompletionTimes){
+                        Log.d(TAG, "完成时间: " + completion_time);
+                    }
+
+                }).start();
+            }
+        });
     }
 }
 

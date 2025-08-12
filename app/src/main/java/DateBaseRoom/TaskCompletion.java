@@ -3,6 +3,8 @@ package DateBaseRoom;
 import androidx.room.Entity;
 import androidx.room.ForeignKey;
 import androidx.room.PrimaryKey;
+import androidx.room.TypeConverters;
+
 import java.util.Date;
 
 import DateBaseRoom.Task;
@@ -20,14 +22,13 @@ import DateBaseRoom.Task;
                 onDelete = ForeignKey.CASCADE
         )
 )
+@TypeConverters(Converters.class) // 应用类型转换器
 public class TaskCompletion {
     @PrimaryKey(autoGenerate = true)
     public int completionId;
 
     public int taskId;            // 关联的任务ID
     public Date completedAt;      // 完成时间
-    public String notes;          // 备注(可选)
-    public Integer durationMinutes; // 完成耗时(分钟，可选)
 
     // 构造函数
     public TaskCompletion(int taskId) {

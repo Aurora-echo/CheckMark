@@ -47,4 +47,8 @@ public interface TaskCompletionDao {
     // 获取最近N条完成记录
     @Query("SELECT * FROM task_completions WHERE taskId = :taskId ORDER BY completedAt DESC LIMIT :limit")
     List<TaskCompletion> getRecentCompletions(int taskId, int limit);
+
+    // 获取任务的完成时间列表
+    @Query("SELECT completedAt FROM task_completions WHERE taskId = :taskId ORDER BY completedAt DESC")
+    List<Date> getCompletionTimesForTask(int taskId);
 }

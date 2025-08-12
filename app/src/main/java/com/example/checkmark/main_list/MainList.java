@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import TestAvtivity.TestDateActivity;
 import add_check.Add_Check;
 import check_record.CheckRecord;
 
@@ -128,7 +129,8 @@ public class MainList extends AppCompatActivity {
         // 设置添加按钮
         ImageButton btnAdd = findViewById(R.id.btn_add);
         btnAdd.setOnClickListener(v -> {
-            startActivityForResult(new Intent(MainList.this, Add_Check.class), 1);
+            //startActivityForResult(new Intent(MainList.this, Add_Check.class), 1);
+            startActivityForResult(new Intent(MainList.this, TestDateActivity.class), 1);
         });
 
     }
