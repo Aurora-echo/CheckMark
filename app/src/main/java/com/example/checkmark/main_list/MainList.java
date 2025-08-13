@@ -30,6 +30,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import DateBaseRoom.AppDatabase;
+import DateBaseRoom.Task;
+import DateBaseRoom.TaskCompletionDao;
+import DateBaseRoom.TaskDao;
 import TestAvtivity.TestDateActivity;
 import add_check.Add_Check;
 import check_record.CheckRecord;
@@ -40,17 +44,17 @@ import check_record.CheckRecord;
  */
 public class MainList extends AppCompatActivity {
 
-    // 待办事项列表数据
+    // 适配器待办事项列表数据
     private List<CheckItem> CheckList = new ArrayList<>();
     // 列表适配器
     private CheckAdapter CheckAdapter;
-    // 本地存储工具
-    private SharedPreferences sp;
-    // 常量定义
-    private static final String SP_NAME = "CheckListInfo";
-    private static final String TASKS_KEY = "tasks";
+    //数据库初始化对象
+    private AppDatabase db;
+    //task表实体化
+    private TaskDao taskDao;
+    //所有任务列表
+    List<Task> allTasks;
     private static final String TAG = "Log.MainList";
-    List<Map<String, Object>> tasks; //一个包含了所有任务的列表
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -76,8 +80,10 @@ public class MainList extends AppCompatActivity {
         tvYear.setText(yearFormat.format(new Date()));
         tvTime.setText(timeFormat.format(new Date()));
 
-        // 初始化本地存储
-        sp = getSharedPreferences(SP_NAME, MODE_PRIVATE);
+        //初始化数据库
+        db = AppDatabase.getInstance(this);
+        taskDao = db.taskDao();
+        allTasks = taskDao.getAllTasks();
 
         // 检查精确闹钟权限(Android 12+需要)
         checkExactAlarmPermission();
@@ -129,45 +135,21 @@ public class MainList extends AppCompatActivity {
         // 设置添加按钮
         ImageButton btnAdd = findViewById(R.id.btn_add);
         btnAdd.setOnClickListener(v -> {
-            //startActivityForResult(new Intent(MainList.this, Add_Check.class), 1);
-            startActivityForResult(new Intent(MainList.this, TestDateActivity.class), 1);
+            startActivityForResult(new Intent(MainList.this, Add_Check.class), 1);
         });
-
     }
 
     /**
      * 打开详情页面
      * @param position 点击的位置
-     * 优化点：预先加载任务数据并传递，避免详情页重复解析
      */
     private void openCheckRecord(int position) {
-        Map<String, Object> task = getTaskFromSharedPrefs(CheckList.get(position).getId());
+        Task taskDetai=taskDao.getTaskById(CheckList.get(position).getId());
         Intent intent = new Intent(this, CheckRecord.class);
-        intent.putExtra("id", (double) task.get("id"));
+        intent.putExtra("id", taskDetai.taskId);
         intent.putExtra("position", position);
-        intent.putExtra("taskName", (String) task.get("name"));
-        // 如果没找到任务数据，直接传递序列化后的JSON
-        if (task != null) {
-            Log.i(TAG,"TASK的类型："+task.getClass());
-            intent.putExtra("taskData", new Gson().toJson(task));
-        }
+        intent.putExtra("taskName", taskDetai.title);
         startActivityForResult(intent,1);
-    }
-
-    /**
-     * 从SharedPreferences获取单个任务数据
-     * 传入taskid获取事项详细信息
-     */
-    private Map<String, Object> getTaskFromSharedPrefs(int taskId) {
-        for (Map<String, Object> task : tasks) {
-            Object idObj = task.get("id");
-            int id = idObj instanceof Double ? ((Double) idObj).intValue() : (Integer) idObj;
-            if (id == taskId) {
-                Log.i(TAG,"点击了列表某项，获取到详情发过去,task:"+task);
-                return task;
-            }
-        }
-        return null;
     }
 
     /**
@@ -179,24 +161,18 @@ public class MainList extends AppCompatActivity {
     }
 
     /**
-     * 从SharedPreferences加载任务列表
+     * 从SharedPreferences加载任务列表,并显示页面上
      */
     private void loadTasksFromSharedPreferences() {
-        String tasksJson = sp.getString(TASKS_KEY, "[]");
-        Type type = new TypeToken<List<Map<String, Object>>>(){}.getType();
-        tasks = new Gson().fromJson(tasksJson, type);
         // 获取今天日期用于检查完成状态
-        String today = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-                .format(new Date());
         CheckList.clear();
-        for (Map<String, Object> task : tasks) {
-            // 解析任务ID
-            Object idObj = task.get("id");
-            int id = idObj instanceof Double ? ((Double) idObj).intValue() : (Integer) idObj;
+        for (Task task : allTasks) {
+            // 获取任务ID
+            int id = task.taskId;
             // 检查今日是否完成
-            boolean isCompletedToday = checkIfCompletedToday(task, today);
+            boolean isCompletedToday = (task.status==0) ? false:true ;
             // 添加到列表
-            CheckList.add(new CheckItem(id, (String) task.get("name"), isCompletedToday));
+            CheckList.add(new CheckItem(id, task.title, isCompletedToday));
         }
         // 刷新列表
         if (CheckAdapter != null) {
@@ -225,23 +201,11 @@ public class MainList extends AppCompatActivity {
      * 为所有需要提醒的任务设置闹钟
      */
     private void scheduleAllReminders() {
-        String tasksJson = sp.getString(TASKS_KEY, "[]");
-        List<Map<String, Object>> tasks = new Gson().fromJson(tasksJson,
-                new TypeToken<List<Map<String, Object>>>(){}.getType());
-
-        for (Map<String, Object> task : tasks) {
+        for (Task task : allTasks) {
             //有needsReminder字段且值为true时，设置闹钟
-            if (task.containsKey("needsReminder") && (boolean) task.get("needsReminder")) {
-                //拿到事项的id
-                Object idObj = task.get("id");
-                int id = idObj instanceof Double ? ((Double) idObj).intValue() : (Integer) idObj;
-                //拿到事项的名称
-                String name = (String) task.get("name");
-                //拿到事项的提醒时间
-                String time = (String) task.get("reminderTime");
-
-                if (id != -1 && name != null && time != null) {
-                    ReminderService.setExactAlarm(this, id, name, time);
+            if (task.needRemind) {
+                if (task.taskId != -1 && task.title != null && task.remindTime != null) {
+                    ReminderService.setExactAlarm(this, task.taskId, task.title, task.remindTime);
                 }
             }
         }
@@ -269,13 +233,8 @@ public class MainList extends AppCompatActivity {
      * 取消所有提醒
      */
     private void cancelAllReminders() {
-        String tasksJson = sp.getString(TASKS_KEY, "[]");
-        List<Map<String, Object>> tasks = new Gson().fromJson(tasksJson,
-                new TypeToken<List<Map<String, Object>>>(){}.getType());
-
-        for (Map<String, Object> task : tasks) {
-            Object idObj = task.get("id");
-            int id = idObj instanceof Double ? ((Double) idObj).intValue() : (Integer) idObj;
+        for (Task task : allTasks) {
+            int id = task.taskId;
             if (id != -1) {
                 ReminderService.cancelAlarm(this, id);
             }

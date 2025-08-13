@@ -49,7 +49,6 @@ public class TestDateActivity extends AppCompatActivity {
         btn_commit_date.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
                 // 示例操作
                 new Thread(() -> {
                     // 1. 创建新任务
@@ -70,17 +69,6 @@ public class TestDateActivity extends AppCompatActivity {
                     // 4. 查询所有任务
                     List<Task> allTasks_2 = taskDao.getAllTasks();
                     Log.i(TAG,"更新完，所有的任务："+allTasks_2.toString());
-
-                    // 4. 查询本周完成次数
-//                    Calendar calendar = Calendar.getInstance();
-//                    calendar.set(Calendar.DAY_OF_WEEK, calendar.getFirstDayOfWeek());
-//                    Date startOfWeek = calendar.getTime();
-//
-//                    calendar.add(Calendar.DAY_OF_WEEK, 6);
-//                    Date endOfWeek = calendar.getTime();
-//
-//                    int weeklyCompletions = completionDao.getWeeklyCompletionCount(
-//                            task.taskId, startOfWeek, endOfWeek);
 
                     // 在主线程更新UI
                     runOnUiThread(() -> {

@@ -20,8 +20,11 @@ import com.google.gson.Gson;             // JSON解析库
 import com.google.gson.reflect.TypeToken; // JSON类型转换
 
 import java.lang.reflect.Type;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;               // 日期时间处理
+import java.util.Date;
 import java.util.List;                   // 列表集合
+import java.util.Locale;
 import java.util.Map;                    // 键值对集合
 
 /**
@@ -57,7 +60,9 @@ public class ReminderService extends BroadcastReceiver {
             // 2. 从Intent中获取任务数据
             int taskId = intent.getIntExtra("taskId", -1);
             String taskName = intent.getStringExtra("taskName");
-            String reminderTime = intent.getStringExtra("reminderTime");
+            // 获取时间戳并转换为 Date
+            long timeInMillis = intent.getLongExtra("reminderTime", -1);
+            Date reminderTime = new Date(timeInMillis);
 
             // 3. 验证数据有效性
             if (taskId != -1 && taskName != null) {
@@ -91,47 +96,54 @@ public class ReminderService extends BroadcastReceiver {
      *      Android 4.4+: setExact
      *      旧版本: set
      */
-    public static void setExactAlarm(Context context, int taskId, String taskName, String reminderTime) {
+    public static void setExactAlarm(Context context, int taskId, String taskName, Date reminderTime) {
         Log.i(TAG, "为"+taskId+"设置精确闹钟,提醒时间为：" + reminderTime);
-        // 1. 检查时间格式是否有效
-        if (TextUtils.isEmpty(reminderTime)) {
+
+        // 1. 检查时间是否有效
+        if (reminderTime == null) {
             Log.i(TAG, "提醒时间为空，无法设置");
             return;
         }
 
         try {
-            // 2. 解析时间字符串为Calendar对象
-            Calendar calendar = parseTime(reminderTime);
+            // 2. 使用传入的Date对象直接创建Calendar
+            Calendar calendar = Calendar.getInstance();
+            calendar.setTime(reminderTime);
+
+            // 确保秒和毫秒为0（精确到分钟）
+            calendar.set(Calendar.SECOND, 0);
+            calendar.set(Calendar.MILLISECOND, 0);
+
             Log.d(TAG, "设置提醒时间: " + calendar.getTime());
 
             // 3. 获取系统闹钟服务
             AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
 
-            // 4. 创建触发时发送的Intent(携带任务数据)
+            // 4. 创建Intent
             Intent intent = new Intent(context, ReminderService.class);
             intent.putExtra("taskId", taskId);
             intent.putExtra("taskName", taskName);
-            intent.putExtra("reminderTime", reminderTime);
 
-            // 5. 创建PendingIntent(系统稍后执行的Intent)
+            // 如果需要，可以把Date转回String存储
+            //SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.getDefault());
+            intent.putExtra("reminderTime",reminderTime.getTime());
+
+            // 5. 创建PendingIntent
             PendingIntent pi = PendingIntent.getBroadcast(
                     context,
-                    taskId, // 使用taskId作为请求码(确保唯一)
+                    taskId,
                     intent,
                     PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
-            // 6. 根据Android版本选择最佳设置方法
+            // 6. 设置闹钟（保持原逻辑）
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                // 最佳实践：setAlarmClock会显示在系统闹钟中，且最可靠
                 AlarmClockInfo info = new AlarmClockInfo(
                         calendar.getTimeInMillis(),
-                        getOpenAppIntent(context)); // 点击闹钟时打开应用的Intent
+                        getOpenAppIntent(context));
                 am.setAlarmClock(info, pi);
             } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
-                // 次优方案：精确闹钟
                 am.setExact(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), pi);
             } else {
-                // 兼容旧版本：普通闹钟
                 am.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), pi);
             }
 
@@ -140,7 +152,6 @@ public class ReminderService extends BroadcastReceiver {
             Log.e(TAG, "设置提醒失败", e);
         }
     }
-
     /**
      * 取消已设置的闹钟
      * @param context 上下文
