@@ -20,6 +20,7 @@ import com.google.android.material.textfield.TextInputEditText;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -97,16 +98,19 @@ public class Add_Check extends AppCompatActivity {
             Toast.makeText(this, "请正确填写任务名称", Toast.LENGTH_SHORT).show();
             return;
         }
-
         boolean needsReminder = cbDailyReminder.isChecked();
         String timeStr = tvSelectedTime.getText().toString(); // 获取显示的 "HH:mm" 格式字符串
         Date reminderTime = null;
-        SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.getDefault());
-        reminderTime = sdf.parse(timeStr);
+        try{
+            SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.getDefault());
+            reminderTime = sdf.parse(timeStr); // 将字符串解析为 Date 对象，这句话需要try...catch...
+        } catch (ParseException e) {
+            Log.e(TAG, "时间格式解析失败：" + timeStr, e);
+        }
         Log.i(TAG, "needsReminder: " + needsReminder);
         Log.i(TAG, "reminderTime: " + reminderTime);
         // 检查是否需要提醒但未选择时间
-        if (needsReminder && reminderTime.isEmpty()) {
+        if (needsReminder && reminderTime == null) {
             Toast.makeText(this, "不是说要提醒吗，时间呢？", Toast.LENGTH_SHORT).show();
             return;
         }
@@ -114,42 +118,8 @@ public class Add_Check extends AppCompatActivity {
         //插入新任务
         Task task = new Task(taskName,needsReminder,reminderTime);
         taskDao.insertTask(task);
-        Toast.makeText(this, "事件已记录", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "任务已新建成功", Toast.LENGTH_SHORT).show();
         finish();
-    }
-
-    private List<Map<String, Object>> getTasksFromSharedPreferences() {
-        String tasksJson = sp.getString(TASKS_KEY, "[]");
-        Type type = new TypeToken<List<Map<String, Object>>>(){}.getType();
-        return new Gson().fromJson(tasksJson, type);
-    }
-
-    private void saveTasksToSharedPreferences(List<Map<String, Object>> tasks) {
-        String tasksJson = new Gson().toJson(tasks);
-        sp.edit().putString(TASKS_KEY, tasksJson).apply();
-    }
-
-    // 添加完成记录的方法（可在其他地方调用）
-    public static void addCompletionRecord(SharedPreferences sp, int taskIndex) {
-        List<Map<String, Object>> tasks = new Gson().fromJson(
-                sp.getString(TASKS_KEY, "[]"),
-                new TypeToken<List<Map<String, Object>>>(){}.getType()
-        );
-
-        if (taskIndex >= 0 && taskIndex < tasks.size()) {
-            Map<String, Object> task = tasks.get(taskIndex);
-            List<String> records = (List<String>) task.get("completionRecords");
-            if (records == null) {
-                records = new ArrayList<>();
-            }
-
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
-            records.add(sdf.format(new Date()));
-
-            task.put("completionRecords", records);
-            new Gson().toJson(tasks);
-            sp.edit().putString(TASKS_KEY, new Gson().toJson(tasks)).apply();
-        }
     }
 
     public synchronized int getNextTaskId(Context context) {

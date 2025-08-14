@@ -1,5 +1,6 @@
 package DateBaseRoom;
 
+import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Delete;
 import androidx.room.Insert;
@@ -28,7 +29,7 @@ public interface TaskDao {
 
     // 获取所有任务
     @Query("SELECT * FROM tasks")
-    List<Task> getAllTasks();
+    LiveData<List<Task>> getAllTasks();
 
     // 根据ID获取任务
     @Query("SELECT * FROM tasks WHERE taskId = :taskId")

@@ -58,8 +58,8 @@ public class TestDateActivity extends AppCompatActivity {
                     taskDao.insertTask(task);
 
                     // 2. 查询所有任务
-                    List<Task> allTasks = taskDao.getAllTasks();
-                    Log.i(TAG,"创建完，所有的任务："+allTasks.toString());
+                    //List<Task> allTasks = taskDao.getAllTasks();
+                    //Log.i(TAG,"创建完，所有的任务："+allTasks.toString());
 
                     //3.修改任务
                     Task updateTask = taskDao.getTaskById(2);
@@ -67,8 +67,8 @@ public class TestDateActivity extends AppCompatActivity {
                     taskDao.updateTask(updateTask);
 
                     // 4. 查询所有任务
-                    List<Task> allTasks_2 = taskDao.getAllTasks();
-                    Log.i(TAG,"更新完，所有的任务："+allTasks_2.toString());
+                    //List<Task> allTasks_2 = taskDao.getAllTasks();
+                    //Log.i(TAG,"更新完，所有的任务："+allTasks_2.toString());
 
                     // 在主线程更新UI
                     runOnUiThread(() -> {

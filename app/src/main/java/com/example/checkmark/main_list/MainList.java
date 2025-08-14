@@ -83,16 +83,16 @@ public class MainList extends AppCompatActivity {
         //初始化数据库
         db = AppDatabase.getInstance(this);
         taskDao = db.taskDao();
-        allTasks = taskDao.getAllTasks();
-
-        // 检查精确闹钟权限(Android 12+需要)
-        checkExactAlarmPermission();
-
-        // 初始化界面
-        initViews();
-
-        // 加载数据
-        loadTasksFromSharedPreferences();
+        taskDao.getAllTasks().observe(this, tasks -> {
+            allTasks = tasks;
+            Log.i(TAG, "【onCreate】allTasks：" + tasks);
+            // 检查精确闹钟权限(Android 12+需要)
+            checkExactAlarmPermission();
+            // 初始化界面
+            initViews();
+            //加载数据
+            loadTasksFromSharedPreferences();
+        });
     }
 
     /**
@@ -149,6 +149,12 @@ public class MainList extends AppCompatActivity {
         intent.putExtra("id", taskDetai.taskId);
         intent.putExtra("position", position);
         intent.putExtra("taskName", taskDetai.title);
+        intent.putExtra("needRemind",taskDetai.needRemind);
+        if(taskDetai.needRemind){
+            //需要把date转为long放进intent
+            long remindTime_long = taskDetai.remindTime.getTime();
+            intent.putExtra("remindTime",remindTime_long);
+        }
         startActivityForResult(intent,1);
     }
 
@@ -161,9 +167,10 @@ public class MainList extends AppCompatActivity {
     }
 
     /**
-     * 从SharedPreferences加载任务列表,并显示页面上
+     * 从数据库加载任务列表,并显示页面上
      */
     private void loadTasksFromSharedPreferences() {
+        Log.i(TAG,"【loadTasksFromSharedPreferences】开始从allTasks加载任务显示");
         // 获取今天日期用于检查完成状态
         CheckList.clear();
         for (Task task : allTasks) {
