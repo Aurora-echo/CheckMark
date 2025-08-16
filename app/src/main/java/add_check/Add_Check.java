@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import DateBaseRoom.AppDatabase;
 import DateBaseRoom.Task;
 import DateBaseRoom.TaskDao;
 
@@ -44,6 +45,7 @@ public class Add_Check extends AppCompatActivity {
     private Button btnConfirm;
     private static final String TAG = "Log.Add_Check";
     private TaskDao taskDao;
+    private AppDatabase db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -62,6 +64,9 @@ public class Add_Check extends AppCompatActivity {
         tvSelectedTime = findViewById(R.id.tv_selected_time);
         //提交按钮
         btnConfirm = findViewById(R.id.btn_confirm);
+
+        db = AppDatabase.getInstance(this);
+        taskDao = db.taskDao();
 
         // “每日未完成提醒”勾选框状态变化监听
         cbDailyReminder.setOnCheckedChangeListener((buttonView, isChecked) -> {
@@ -117,9 +122,13 @@ public class Add_Check extends AppCompatActivity {
 
         //插入新任务
         Task task = new Task(taskName,needsReminder,reminderTime);
-        taskDao.insertTask(task);
-        Toast.makeText(this, "任务已新建成功", Toast.LENGTH_SHORT).show();
-        finish();
+        new Thread(() -> {
+            taskDao.insertTask(task);
+            runOnUiThread(() -> {
+                Toast.makeText(this, "任务已新建成功", Toast.LENGTH_SHORT).show();
+                finish();
+            });
+        }).start();
     }
 
     public synchronized int getNextTaskId(Context context) {

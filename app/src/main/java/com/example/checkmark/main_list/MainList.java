@@ -53,7 +53,7 @@ public class MainList extends AppCompatActivity {
     //task表实体化
     private TaskDao taskDao;
     //所有任务列表
-    List<Task> allTasks;
+    List<Task> allTasks=new ArrayList<>();;
     private static final String TAG = "Log.MainList";
 
     @Override
@@ -144,18 +144,19 @@ public class MainList extends AppCompatActivity {
      * @param position 点击的位置
      */
     private void openCheckRecord(int position) {
-        Task taskDetai=taskDao.getTaskById(CheckList.get(position).getId());
-        Intent intent = new Intent(this, CheckRecord.class);
-        intent.putExtra("id", taskDetai.taskId);
-        intent.putExtra("position", position);
-        intent.putExtra("taskName", taskDetai.title);
-        intent.putExtra("needRemind",taskDetai.needRemind);
-        if(taskDetai.needRemind){
-            //需要把date转为long放进intent
-            long remindTime_long = taskDetai.remindTime.getTime();
-            intent.putExtra("remindTime",remindTime_long);
-        }
-        startActivityForResult(intent,1);
+        new Thread(() -> {
+            Task taskDetai=taskDao.getTaskById(CheckList.get(position).getId());
+            Intent intent = new Intent(this, CheckRecord.class);
+            intent.putExtra("id", taskDetai.taskId);
+            intent.putExtra("taskName", taskDetai.title);
+            intent.putExtra("needRemind",taskDetai.needRemind);
+            if(taskDetai.needRemind){
+                //需要把date转为long放进intent
+                long remindTime_long = taskDetai.remindTime.getTime();
+                intent.putExtra("remindTime",remindTime_long);
+            }
+            startActivityForResult(intent,1);
+        }).start();
     }
 
     /**
@@ -171,6 +172,10 @@ public class MainList extends AppCompatActivity {
      */
     private void loadTasksFromSharedPreferences() {
         Log.i(TAG,"【loadTasksFromSharedPreferences】开始从allTasks加载任务显示");
+        if (allTasks == null) {
+            Log.w(TAG, "警告：allTasks为null");
+            return;
+        }
         // 获取今天日期用于检查完成状态
         CheckList.clear();
         for (Task task : allTasks) {
@@ -229,10 +234,12 @@ public class MainList extends AppCompatActivity {
 
     @Override
     protected void onResume() {
-        Log.i(TAG, "onResume: 执行，取消所有提醒，重新设置所有提醒");
+        Log.i(TAG, "【MainList.onResume】 执行，取消所有提醒，重新设置所有提醒");
         super.onResume();
-        cancelAllReminders();
-        scheduleAllReminders(); // 确保提醒设置正确
+        if(!allTasks.isEmpty()){
+            cancelAllReminders();
+            scheduleAllReminders(); // 确保提醒设置正确
+        }
         loadTasksFromSharedPreferences(); // 刷新列表
     }
 

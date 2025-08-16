@@ -35,17 +35,4 @@ public class Task {
         this.title=title;
     }
 
-    @Override
-    public String toString() {
-        return "Task{" +
-                "taskId=" + taskId +
-                ", title='" + title + '\'' +
-                ", status=" + status +
-                ", createdAt=" + createdAt +
-                ", updatedAt=" + updatedAt +
-                ", needRemind=" + needRemind +
-                ", remindTime=" + remindTime +
-                '}';
-    }
-
 }

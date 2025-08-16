@@ -36,6 +36,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+import DateBaseRoom.AppDatabase;
 import DateBaseRoom.DateUtils;
 import DateBaseRoom.TaskCompletion;
 import DateBaseRoom.TaskCompletionDao;
@@ -55,7 +56,7 @@ public class CheckRecord extends AppCompatActivity {
     private Button btnSetting;
 
     // 数据相关
-    private int  taskPosition,taskid;
+    private int  taskid;
     private String taskName;
     private boolean needsReminder;
     private Date reminderTime;    // 新增：提醒时间
@@ -63,6 +64,7 @@ public class CheckRecord extends AppCompatActivity {
     // 日志标签
     private static final String TAG = "Log.CheckRecord";
     private TaskCompletionDao completionDao; // 数据库操作对象
+    private AppDatabase db;
     //任务完成日期列表数组
     List<Date> taskCompletionTimes;
     private DateUtils dateUtils = new DateUtils();
@@ -71,6 +73,10 @@ public class CheckRecord extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_check_record);
+
+        db = AppDatabase.getInstance(this);
+        completionDao = db.completionDao();
+
         // 初始化视图
         initViews();
         // 获取Intent数据
@@ -128,8 +134,6 @@ public class CheckRecord extends AppCompatActivity {
      * 获取Intent传递的数据
      */
     private void getShowData() {
-        //获取点击列表的序号
-        taskPosition = getIntent().getIntExtra("position", -1);
         //获取任务名称（从intent）
         taskName = getIntent().getStringExtra("taskName");
         //获取任务的id
@@ -153,6 +157,8 @@ public class CheckRecord extends AppCompatActivity {
      * 加载任务数据（优化后的加载逻辑）
      */
     private void loadData() {
+        // 加载任务名称
+        tvTaskName.setText(taskName);
         //加载事项提醒信息
         loadReminderInfo(needsReminder,reminderTime);
         //加载完成日期数据
@@ -167,10 +173,14 @@ public class CheckRecord extends AppCompatActivity {
      * 同时更新needsReminder和reminderTime字段
      */
     private void loadReminderInfo(boolean needsReminder,Date reminderTime) {
+        Log.i(TAG,"【loadReminderInfo】needsReminder:"+needsReminder);
+        Log.i(TAG,"【loadReminderInfo】reminderTime:"+reminderTime);
         // 获取提醒设置
         if( needsReminder && reminderTime != null) {
             ivReminderIcon.setVisibility(View.VISIBLE);
-            tvReminderInfo.setText("每天 " + reminderTime + " 提醒");
+            SimpleDateFormat reminderTimeFormat = new SimpleDateFormat("HH:mm", Locale.getDefault());
+            String reminderTimeFormat_hhmm = reminderTimeFormat.format(reminderTime);
+            tvReminderInfo.setText("每天 " + reminderTimeFormat_hhmm + " 提醒");
         } else {
             ivReminderIcon.setVisibility(View.GONE);
             tvReminderInfo.setText("未设置提醒");
@@ -181,6 +191,7 @@ public class CheckRecord extends AppCompatActivity {
      * 加载完成日期记录
      */
     private void loadCompletedDates(List<Date> taskCompletionTimes) {
+        Log.i(TAG,"【loadCompletedDates】taskCompletionTimes:"+taskCompletionTimes);
         if (taskCompletionTimes != null) {
             for (Date record : taskCompletionTimes) {
                 try {
@@ -205,12 +216,17 @@ public class CheckRecord extends AppCompatActivity {
      * 计算任务完成次数
      */
     private void calculate_TaskDone_Count() {
-        int total_Completions = completionDao.getCompletionCountForTask(taskid);
-        tvCount.setText(""+total_Completions);   //总共完成次数
-        int month_Completions = completionDao.getMonthlyCompletionCount(taskid,dateUtils.getStartOfMonth(), dateUtils.getEndOfMonth());
-        tvMonthCount.setText(""+month_Completions); //本月完成次数
-        int week_Completions = completionDao.getWeeklyCompletionCount(taskid,dateUtils.getStartOfWeek(), dateUtils.getEndOfWeek());
-        tvWeekCount.setText(""+week_Completions);   //本周完成次数
+        new Thread(() -> {
+            int total_Completions = completionDao.getCompletionCountForTask(taskid);
+            int month_Completions = completionDao.getMonthlyCompletionCount(taskid, dateUtils.getStartOfMonth(), dateUtils.getEndOfMonth());
+            int week_Completions = completionDao.getWeeklyCompletionCount(taskid, dateUtils.getStartOfWeek(), dateUtils.getEndOfWeek());
+
+            runOnUiThread(() -> {
+                tvCount.setText(String.valueOf(total_Completions));
+                tvMonthCount.setText(String.valueOf(month_Completions));
+                tvWeekCount.setText(String.valueOf(week_Completions));
+            });
+        }).start();
     }
 
     /**
@@ -221,12 +237,14 @@ public class CheckRecord extends AppCompatActivity {
         if (!completedDates.contains(today)) {
             completedDates.add(today);
             TaskCompletion completion_record = new TaskCompletion(taskid);
-            calendarView.invalidateDecorators();
-            Toast.makeText(this, "今天已记录完成", Toast.LENGTH_SHORT).show();
-            // 设置结果表示数据已更新
-            setResult(RESULT_OK);
-            //这里有一点bug，记录完成后再次计算，但是task还是旧的，所以次数不会增加
-            calculate_TaskDone_Count(); // 更新完成次数
+            new Thread(() -> {
+                completionDao.insertCompletion(completion_record); // 插入数据库
+                runOnUiThread(() -> {
+                    calendarView.invalidateDecorators();
+                    Toast.makeText(this, "今天已记录完成", Toast.LENGTH_SHORT).show();
+                    calculate_TaskDone_Count(); // 更新完成次数
+                });
+            }).start();
 
             /**
              * 任务当天已完成，取消当天闹钟，设置下一天的闹钟,还没有实现，不会啊
