@@ -96,9 +96,11 @@ public class checksetting extends AppCompatActivity {
             }
             long long_reminderTime = intent.getLongExtra("long_reminderTime",-1);
             if(long_reminderTime != -1){
-                String time = new Date(long_reminderTime).toString();
-                selectedTime = time;
-                tvSelectedTime.setText(time);
+                Date time = new Date(long_reminderTime);
+                SimpleDateFormat reminderTimeFormat = new SimpleDateFormat("HH:mm", Locale.getDefault());
+                String reminderTimeFormat_hhmm = reminderTimeFormat.format(time);
+                selectedTime = reminderTimeFormat_hhmm;
+                tvSelectedTime.setText(reminderTimeFormat_hhmm);
             }
         }
 
@@ -170,7 +172,9 @@ public class checksetting extends AppCompatActivity {
                 // 子线程更新数据库
                 new Thread(() -> {
                     taskDao.updateTask(updateTask);
-                    this.onDestroy(); // 保存成功后关闭页面
+                    runOnUiThread(() -> {
+                        finish();
+                    });
                 }).start();
             } else {
                 Toast.makeText(this, "更新失败", Toast.LENGTH_SHORT).show();
@@ -180,8 +184,18 @@ public class checksetting extends AppCompatActivity {
 
     private void deleteSaveToSPfile(int id){
         Log.i(TAG, "开始执行删除，要删除的任务ID: " + id);
-        Task DeleteTask = taskDao.getTaskById(id).getValue(); // 获取要更新的任务
-        taskDao.deleteTask(DeleteTask);
+        new Thread(() ->{
+            Task DeleteTask = taskDao.getTaskById_Task_NotLaveData(id); // 获取要更新的任务
+            int deleterow = taskDao.deleteTask(DeleteTask);
+            if(deleterow > 0){
+                runOnUiThread(() -> {
+                    Toast.makeText(this, "删除成功", Toast.LENGTH_SHORT).show();
+                    finish();
+                });
+            } else {
+                Toast.makeText(this, "删除失败", Toast.LENGTH_SHORT).show();
+            }
+        }).start();
     }
 
     /**

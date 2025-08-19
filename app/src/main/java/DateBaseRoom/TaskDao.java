@@ -33,7 +33,7 @@ public interface TaskDao {
 
     // 删除任务
     @Delete
-    void deleteTask(Task task);
+    int deleteTask(Task task);
 
     // 获取所有任务
     @Query("SELECT * FROM tasks")

@@ -1,10 +1,16 @@
 package com.example.checkmark.main_list;
 
+import static checksetting.checksetting.observeOnce;
+
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import android.app.AlarmManager;
+import android.app.AlertDialog;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -25,6 +31,7 @@ import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -34,7 +41,6 @@ import DateBaseRoom.AppDatabase;
 import DateBaseRoom.Task;
 import DateBaseRoom.TaskCompletionDao;
 import DateBaseRoom.TaskDao;
-import TestAvtivity.TestDateActivity;
 import add_check.Add_Check;
 import check_record.CheckRecord;
 
@@ -53,7 +59,7 @@ public class MainList extends AppCompatActivity {
     //task表实体化
     private TaskDao taskDao;
     //所有任务列表
-    List<Task> allTasks=new ArrayList<>();;
+    List<Task> allTasks=new ArrayList<>();
     private static final String TAG = "Log.MainList";
 
     @Override
@@ -62,6 +68,12 @@ public class MainList extends AppCompatActivity {
 
         setContentView(R.layout.activity_main_list);
         Log.d(TAG, "Activity创建");
+
+        requestNotificationPermission(); // 检查通知权限
+        requestAutoStartPermission();   // 检查自启动权限
+
+        cancelMidnightReset(this); // 取消之前的0点重置任务(用于重置之前的检查)
+        scheduleMidnightReset(this); // 0点重置任务
 
         // 获取当前日期和时间显示在左上角和右上角
         // 在Activity中设置日期时间
@@ -140,20 +152,34 @@ public class MainList extends AppCompatActivity {
     }
 
     /**
-     * 打开详情页面
-     * @param position 点击的位置
+     * 打开任务详情页面
+     * @param position 列表中的位置索引
+
      */
     private void openCheckRecord(int position) {
-        taskDao.getTaskById(CheckList.get(position).getId()).observe(this,taskDetai->{
+        // 打印调用栈，用于调试（原有代码保留）
+        Log.d(TAG, "【openCheckRecord】openCheckRecord called from: ", new Throwable());
+
+        // 使用observeOnce方法替代普通observe（核心修改点）
+        // 这样可以确保LiveData回调只执行一次，避免重复触发
+        observeOnce(taskDao.getTaskById(CheckList.get(position).getId()), this, taskDetai -> {
+            // 保留原有日志输出
+            Log.i(TAG,"【openCheckRecord】LiveData正在运行...");
+
+            // 以下保持原有逻辑完全不变
             Intent intent = new Intent(this, CheckRecord.class);
             intent.putExtra("id", taskDetai.taskId);
             intent.putExtra("taskName", taskDetai.title);
             intent.putExtra("needRemind",taskDetai.needRemind);
+
+            // 保持原有时间处理逻辑
             if(taskDetai.needRemind){
-                //需要把date转为long放进intent
+                //需要把date转为long放进intent（原有注释保留）
                 long remindTime_long = taskDetai.remindTime.getTime();
                 intent.putExtra("remindTime",remindTime_long);
             }
+
+            // 保持原有跳转逻辑
             startActivityForResult(intent,1);
         });
     }
@@ -192,21 +218,6 @@ public class MainList extends AppCompatActivity {
         }
         // 设置提醒
         scheduleAllReminders();
-    }
-
-    /**
-     * 检查任务今天是否已完成
-     */
-    private boolean checkIfCompletedToday(Map<String, Object> task, String today) {
-        List<String> records = (List<String>) task.get("completionRecords");
-        if (records != null) {
-            for (String record : records) {
-                if (record.startsWith(today)) {
-                    return true;
-                }
-            }
-        }
-        return false;
     }
 
     /**
@@ -254,4 +265,126 @@ public class MainList extends AppCompatActivity {
             }
         }
     }
+
+    /**
+     * 检查通知权限
+     * */
+    private boolean areNotificationsEnabled() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationManager manager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            return manager.areNotificationsEnabled();
+        }
+        return true; // Android 13以下默认有权限
+    }
+
+    /**
+     * 引导用户去配置通知权限
+     * */
+    private void requestNotificationPermission() {
+        if (!areNotificationsEnabled()) {
+            new AlertDialog.Builder(this)
+                    .setTitle("开启通知权限")
+                    .setMessage("请允许通知权限，确保及时接收提醒（锁屏/横幅）")
+                    .setPositiveButton("去设置", (dialog, which) -> {
+                        // 跳转到应用通知设置页
+                        Intent intent = new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS);
+                        intent.putExtra(Settings.EXTRA_APP_PACKAGE, getPackageName());
+                        startActivity(intent);
+                    })
+                    .setNegativeButton("取消", null)
+                    .show();
+        }
+    }
+
+
+    /**
+     * 引导用户开始自启动
+     * */
+    private void requestAutoStartPermission() {
+        String manufacturer = Build.MANUFACTURER.toLowerCase();
+        if (manufacturer.contains("huawei") || manufacturer.contains("xiaomi") || manufacturer.contains("oppo")) {
+            new AlertDialog.Builder(this)
+                    .setTitle("允许自启动")
+                    .setMessage("请在系统设置中允许应用自启动和关联启动，避免提醒失效")
+                    .setPositiveButton("去设置", (dialog, which) -> {
+                        // 跳转到品牌特定的自启动设置页
+                        try {
+                            Intent intent = new Intent();
+                            if (manufacturer.contains("huawei")) {
+                                intent.setComponent(new ComponentName("com.huawei.systemmanager", "com.huawei.systemmanager.startupmgr.ui.StartupNormalAppListActivity"));
+                            } else if (manufacturer.contains("xiaomi")) {
+                                intent.setComponent(new ComponentName("com.miui.securitycenter", "com.miui.appmanager.ApplicationsDetailsActivity"));
+                            } else if (manufacturer.contains("oppo")) {
+                                intent.setComponent(new ComponentName("com.coloros.safecenter", "com.coloros.safecenter.permission.startup.StartupAppListActivity"));
+                            }
+                            startActivity(intent);
+                        } catch (Exception e) {
+                            Toast.makeText(this, "无法跳转，请手动在设置中开启", Toast.LENGTH_SHORT).show();
+                        }
+                    })
+                    .setNegativeButton("取消", null)
+                    .show();
+        }
+    }
+
+    /**
+     * 0点重置所有任务状态
+     * */
+    public static void scheduleMidnightReset(Context context) {
+        AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+        Intent intent = new Intent(context, MidnightResetReceiver.class);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(
+                context,
+                0,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(System.currentTimeMillis());
+        calendar.set(Calendar.HOUR_OF_DAY, 24);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+
+        if (calendar.getTimeInMillis() <= System.currentTimeMillis()) {
+            calendar.add(Calendar.DAY_OF_YEAR, 1);
+        }
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            alarmManager.setExactAndAllowWhileIdle(
+                    AlarmManager.RTC_WAKEUP,
+                    calendar.getTimeInMillis(),
+                    pendingIntent
+            );
+        } else {
+            alarmManager.setExact(
+                    AlarmManager.RTC_WAKEUP,
+                    calendar.getTimeInMillis(),
+                    pendingIntent
+            );
+        }
+
+        alarmManager.setRepeating(
+                AlarmManager.RTC_WAKEUP,
+                calendar.getTimeInMillis(),
+                AlarmManager.INTERVAL_DAY,
+                pendingIntent
+        );
+    }
+
+    /**
+     * 取消可能存在的旧的定时任务，用于设置新任务前执行
+     * */
+    public static void cancelMidnightReset(Context context) {
+        AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+        Intent intent = new Intent(context, MidnightResetReceiver.class);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(
+                context,
+                0,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
+        alarmManager.cancel(pendingIntent);
+    }
+
 }
