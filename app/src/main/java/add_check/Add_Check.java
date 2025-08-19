@@ -130,11 +130,4 @@ public class Add_Check extends AppCompatActivity {
             });
         }).start();
     }
-
-    public synchronized int getNextTaskId(Context context) {
-        SharedPreferences sp = context.getSharedPreferences("task_ids", MODE_PRIVATE);
-        int id = sp.getInt("last_id", 0) + 1;
-        sp.edit().putInt("last_id", id).apply();
-        return id;
-    }
 }

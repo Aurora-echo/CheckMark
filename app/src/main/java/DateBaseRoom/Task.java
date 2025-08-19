@@ -35,4 +35,12 @@ public class Task {
         this.title=title;
     }
 
+    public void setneedRemind(boolean needRemind) {
+        this.needRemind=needRemind;
+    }
+
+    public void setremindTime(Date remindTime) {
+        this.remindTime=remindTime;
+    }
+
 }

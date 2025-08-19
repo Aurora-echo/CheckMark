@@ -91,7 +91,7 @@ public class MainList extends AppCompatActivity {
             // 初始化界面
             initViews();
             //加载数据
-            loadTasksFromSharedPreferences();
+            loadTasksFromDatabase();
         });
     }
 
@@ -144,8 +144,7 @@ public class MainList extends AppCompatActivity {
      * @param position 点击的位置
      */
     private void openCheckRecord(int position) {
-        new Thread(() -> {
-            Task taskDetai=taskDao.getTaskById(CheckList.get(position).getId());
+        taskDao.getTaskById(CheckList.get(position).getId()).observe(this,taskDetai->{
             Intent intent = new Intent(this, CheckRecord.class);
             intent.putExtra("id", taskDetai.taskId);
             intent.putExtra("taskName", taskDetai.title);
@@ -156,7 +155,7 @@ public class MainList extends AppCompatActivity {
                 intent.putExtra("remindTime",remindTime_long);
             }
             startActivityForResult(intent,1);
-        }).start();
+        });
     }
 
     /**
@@ -170,8 +169,8 @@ public class MainList extends AppCompatActivity {
     /**
      * 从数据库加载任务列表,并显示页面上
      */
-    private void loadTasksFromSharedPreferences() {
-        Log.i(TAG,"【loadTasksFromSharedPreferences】开始从allTasks加载任务显示");
+    private void loadTasksFromDatabase() {
+        Log.i(TAG,"【loadTasksFromDatabase】开始从allTasks加载任务显示");
         if (allTasks == null) {
             Log.w(TAG, "警告：allTasks为null");
             return;
@@ -182,6 +181,7 @@ public class MainList extends AppCompatActivity {
             // 获取任务ID
             int id = task.taskId;
             // 检查今日是否完成
+            //该处有问题，需要修改，Task表不会改变status状态
             boolean isCompletedToday = (task.status==0) ? false:true ;
             // 添加到列表
             CheckList.add(new CheckItem(id, task.title, isCompletedToday));
@@ -228,7 +228,7 @@ public class MainList extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == 1 && resultCode == RESULT_OK) {
             Log.i(TAG, "onActivityResult: 返回，执行刷新页面");
-            loadTasksFromSharedPreferences(); // 刷新列表
+            loadTasksFromDatabase(); // 刷新列表
         }
     }
 
@@ -240,7 +240,7 @@ public class MainList extends AppCompatActivity {
             cancelAllReminders();
             scheduleAllReminders(); // 确保提醒设置正确
         }
-        loadTasksFromSharedPreferences(); // 刷新列表
+        loadTasksFromDatabase(); // 刷新列表
     }
 
     /**

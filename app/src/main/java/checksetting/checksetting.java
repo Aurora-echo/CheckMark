@@ -17,6 +17,9 @@ import androidx.appcompat.widget.SwitchCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
+import androidx.lifecycle.LifecycleOwner;
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.Observer;
 
 import com.example.checkmark.R;
 import com.example.checkmark.main_list.MainList;
@@ -26,9 +29,15 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.Locale;
 
+import DateBaseRoom.AppDatabase;
+import DateBaseRoom.Task;
+import DateBaseRoom.TaskDao;
 import check_record.CheckRecord;
 
 public class checksetting extends AppCompatActivity {
@@ -38,16 +47,20 @@ public class checksetting extends AppCompatActivity {
         private Button btnTimePicker;
         private TextView tvSelectedTime;
         private String selectedTime = null;
-        private static final String SP_NAME = "CheckListInfo";
-        private static final String TASKS_KEY = "tasks";
-        private SharedPreferences sp;
         private static String TAG = "Log.checksetting";
-        private double taskId;
+        private int taskId;
+        private TaskDao taskDao;
+        private AppDatabase db;
+        Date timeDate = null; // 用于存储解析后的时间
 
         @Override
         protected void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
             setContentView(R.layout.activity_checksetting);
+
+            //数据库初始化
+            db = AppDatabase.getInstance(this);
+            taskDao = db.taskDao();
 
             // 初始化视图
             initViews();
@@ -73,14 +86,17 @@ public class checksetting extends AppCompatActivity {
         private void setupInitialData() {
             // 从Intent获取数据
             Intent intent = getIntent();
-            taskId = intent.getDoubleExtra("id", -1);
-            Log.i(TAG,"从事项详情给的intent取出来的id，taskId："+taskId);
+            taskId = intent.getIntExtra("id", -1);
+            Log.i(TAG,"【setupInitialData】从事项详情给的intent取出来的id，taskId："+taskId);
             etTaskName.setText(intent.getStringExtra("taskName"));
             boolean needsReminder = intent.getBooleanExtra("needsReminder", false);
-            switchReminder.setChecked(needsReminder);
-            timePickerContainer.setVisibility(needsReminder ? View.VISIBLE : View.GONE);
-            String time = intent.getStringExtra("reminderTime");
-            if (time != null) {
+            if (needsReminder){
+                switchReminder.setChecked(needsReminder);
+                timePickerContainer.setVisibility(View.VISIBLE);
+            }
+            long long_reminderTime = intent.getLongExtra("long_reminderTime",-1);
+            if(long_reminderTime != -1){
+                String time = new Date(long_reminderTime).toString();
                 selectedTime = time;
                 tvSelectedTime.setText(time);
             }
@@ -104,6 +120,7 @@ public class checksetting extends AppCompatActivity {
                     this,
                     (view, hourOfDay, minute) -> {
                         selectedTime = String.format(Locale.getDefault(), "%02d:%02d", hourOfDay, minute);
+                        Log.i(TAG,"【showTimePickerDialog】选择的时间："+selectedTime);
                         tvSelectedTime.setText(selectedTime);
                     },
                     // 默认显示当前时间
@@ -129,88 +146,62 @@ public class checksetting extends AppCompatActivity {
                 return;
             }
             // 保存逻辑
-            saveSettingsToSPfile(taskId,name,needsReminder,time);
+            saveSettingsToDataBase(taskId,name,needsReminder,time);
         }
 
-    private void saveSettingsToSPfile(double id, String name, boolean needsReminder, String time) {
-        Log.i(TAG,"开始执行修改保存，保存的数据是：id:"+id+",name:"+name+",needsReminder:"+needsReminder+",time:"+time);
-        // 获取 SharedPreferences
-        sp = getSharedPreferences(SP_NAME, MODE_PRIVATE);
-        String tasksJson = sp.getString(TASKS_KEY, "[]");
-        try {
-            // 解析 JSON 数组
-            JSONArray tasksArray = new JSONArray(tasksJson);
-            Log.i(TAG,"保存之前解析出来的数组，tasksArray:"+tasksArray);
-            // 遍历查找匹配 ID 的任务
-            for (int i = 0; i < tasksArray.length(); i++) {
-                JSONObject task = tasksArray.getJSONObject(i);
-                if (task.getDouble("id") == id) {
-                    // 更新任务属性
-                    task.put("name", name);
-                    task.put("needsReminder", needsReminder);
+    private void saveSettingsToDataBase(int id, String name, boolean needsReminder, String time) {
+        Log.i(TAG, "【saveSettingsToDataBase】开始执行修改保存，保存的数据是：id:" + id + ",name:" + name + ",needsReminder:" + needsReminder + ",time:" + time);
 
-                    // 根据 needsReminder 设置 reminderTime
-                    if (needsReminder) {
-                        task.put("reminderTime", time);
-                    } else {
-                        task.put("reminderTime", "");
-                    }
-                    break; // 找到后退出循环
-                }
+        if (needsReminder && time != null) {
+            try {
+                SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.getDefault());
+                timeDate = sdf.parse(time); // 字符串 → Date
+            } catch (ParseException e) {
+                Log.e(TAG, "【saveSettingsToDataBase】时间格式解析失败：" + timeDate, e);
             }
-            Log.i(TAG,"保存之后的数组，tasksArray:"+tasksArray);
-            // 保存修改后的数据回 SharedPreferences
-            SharedPreferences.Editor editor = sp.edit();
-            editor.putString(TASKS_KEY, tasksArray.toString());
-            editor.apply();
-            Toast.makeText(this, "修改成功！", Toast.LENGTH_SHORT).show();
-            Intent intent = new Intent(this,MainList.class);
-            startActivity(intent);
-        } catch (JSONException e) {
-            e.printStackTrace();
-            // 处理 JSON 解析错误
-            Toast.makeText(this, "修改失败，请联系大神", Toast.LENGTH_SHORT).show();
         }
+
+        observeOnce(taskDao.getTaskById(id), this, updateTask -> {
+            if (updateTask != null) {
+                Log.i(TAG, "找到任务，开始更新（仅触发一次）");
+                updateTask.setTitle(name);
+                updateTask.setneedRemind(needsReminder);
+                updateTask.setremindTime(timeDate);
+                // 子线程更新数据库
+                new Thread(() -> {
+                    taskDao.updateTask(updateTask);
+                    this.onDestroy(); // 保存成功后关闭页面
+                }).start();
+            } else {
+                Toast.makeText(this, "更新失败", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
-    private void deleteSaveToSPfile(double id){
+    private void deleteSaveToSPfile(int id){
         Log.i(TAG, "开始执行删除，要删除的任务ID: " + id);
-        // 获取 SharedPreferences
-        sp = getSharedPreferences(SP_NAME, MODE_PRIVATE);
-        String tasksJson = sp.getString(TASKS_KEY, "[]");
-        try {
-            // 解析 JSON 数组
-            JSONArray tasksArray = new JSONArray(tasksJson);
-            Log.i(TAG, "删除前解析出的数组: " + tasksArray);
+        Task DeleteTask = taskDao.getTaskById(id).getValue(); // 获取要更新的任务
+        taskDao.deleteTask(DeleteTask);
+    }
 
-            // 遍历查找匹配 ID 的任务
-            JSONArray newTasksArray = new JSONArray(); // 创建新数组存放保留的任务
-            boolean found = false;
-            for (int i = 0; i < tasksArray.length(); i++) {
-                JSONObject task = tasksArray.getJSONObject(i);
-                if (task.getDouble("id") != id) {
-                    // 如果ID不匹配，保留该任务
-                    newTasksArray.put(task);
-                } else {
-                    found = true;
+    /**
+     * 观察 LiveData 但只触发一次回调（避免循环）
+     * @param liveData 要观察的 LiveData
+     * @param owner LifecycleOwner（Activity/Fragment）
+     * @param observer 数据回调
+     */
+    public static <T> void observeOnce(LiveData<T> liveData, LifecycleOwner owner, Observer<T> observer) {
+        liveData.observe(owner, new Observer<T>() {
+            @Override
+            public void onChanged(T data) {
+                if (data != null) {
+                    // 1. 先回调给外部 observer（处理数据）
+                    observer.onChanged(data);
+                    // 2. 立即移除观察者，防止再次触发
+                    liveData.removeObserver(this);
                 }
             }
-            if (found) {
-                Log.i(TAG, "删除后的数组: " + newTasksArray);
-                // 保存修改后的数据回 SharedPreferences
-                SharedPreferences.Editor editor = sp.edit();
-                editor.putString(TASKS_KEY, newTasksArray.toString());
-                editor.apply();
-                Toast.makeText(this, "删除成功！", Toast.LENGTH_SHORT).show();
-                Intent intent = new Intent(this, MainList.class);
-                startActivity(intent);
-            } else {
-                Toast.makeText(this, "未找到对应ID的任务", Toast.LENGTH_SHORT).show();
-            }
-        } catch (JSONException e) {
-            e.printStackTrace();
-            Toast.makeText(this, "删除失败，请联系大神", Toast.LENGTH_SHORT).show();
-        }
+        });
     }
 
 }

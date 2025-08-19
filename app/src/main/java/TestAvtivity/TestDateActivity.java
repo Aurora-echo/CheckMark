@@ -62,9 +62,9 @@ public class TestDateActivity extends AppCompatActivity {
                     //Log.i(TAG,"创建完，所有的任务："+allTasks.toString());
 
                     //3.修改任务
-                    Task updateTask = taskDao.getTaskById(2);
-                    updateTask.setTitle("学习Room-3");
-                    taskDao.updateTask(updateTask);
+//                    Task updateTask = taskDao.getTaskById(2);
+//                    updateTask.setTitle("学习Room-3");
+//                    taskDao.updateTask(updateTask);
 
                     // 4. 查询所有任务
                     //List<Task> allTasks_2 = taskDao.getAllTasks();

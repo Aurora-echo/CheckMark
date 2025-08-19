@@ -38,8 +38,10 @@ import java.util.Set;
 
 import DateBaseRoom.AppDatabase;
 import DateBaseRoom.DateUtils;
+import DateBaseRoom.Task;
 import DateBaseRoom.TaskCompletion;
 import DateBaseRoom.TaskCompletionDao;
+import DateBaseRoom.TaskDao;
 import add_check.Add_Check;
 import checksetting.checksetting;
 
@@ -64,6 +66,7 @@ public class CheckRecord extends AppCompatActivity {
     // 日志标签
     private static final String TAG = "Log.CheckRecord";
     private TaskCompletionDao completionDao; // 数据库操作对象
+    private TaskDao taskDao;
     private AppDatabase db;
     //任务完成日期列表数组
     List<Date> taskCompletionTimes;
@@ -76,6 +79,7 @@ public class CheckRecord extends AppCompatActivity {
 
         db = AppDatabase.getInstance(this);
         completionDao = db.completionDao();
+        taskDao = db.taskDao();
 
         // 初始化视图
         initViews();
@@ -103,7 +107,10 @@ public class CheckRecord extends AppCompatActivity {
             intent.putExtra("id", taskid);               // 任务ID
             intent.putExtra("taskName", taskName);       // 任务名称
             intent.putExtra("needsReminder", needsReminder); // 是否需要提醒
-            intent.putExtra("reminderTime", reminderTime);   // 提醒时间(可能为null)
+            if(needsReminder){
+                long long_reminderTime = reminderTime.getTime();
+                intent.putExtra("long_reminderTime", long_reminderTime);   // 提醒时间(可能为null)
+            }
             startActivity(intent);
         });
 
@@ -147,6 +154,7 @@ public class CheckRecord extends AppCompatActivity {
                 reminderTime = new Date(reminderTime_long);
             }
         }
+        Log.i(TAG,"【getShowData】intent中的数据，taskName="+taskName+",taskid="+taskid+",needsReminder="+needsReminder+",reminderTime="+reminderTime);
         //从数据库获取任务完成记录
         new Thread(() ->{
             taskCompletionTimes = completionDao.getCompletionTimesForTask(taskid);
@@ -238,7 +246,8 @@ public class CheckRecord extends AppCompatActivity {
             completedDates.add(today);
             TaskCompletion completion_record = new TaskCompletion(taskid);
             new Thread(() -> {
-                completionDao.insertCompletion(completion_record); // 插入数据库
+                completionDao.insertCompletion(completion_record); // 插入完成记录数据库表
+                taskDao.updateTaskStatus(taskid); // 更新任务状态
                 runOnUiThread(() -> {
                     calendarView.invalidateDecorators();
                     Toast.makeText(this, "今天已记录完成", Toast.LENGTH_SHORT).show();
@@ -272,10 +281,24 @@ public class CheckRecord extends AppCompatActivity {
     }
 
     @Override
-    protected void onResume() {
-        Log.i(TAG, "onResume: 刷新Record()");
+        protected void onResume() {
         super.onResume();
+        Log.i(TAG, "【onResume】读取数据库获取新的数据");
+        new Thread(() -> {
+            Log.i(TAG,"【onResume】taskid:"+taskid);
+            Task task = taskDao.getTaskById_Task_NotLaveData(taskid); // 通过id获取任务信息
+            runOnUiThread(()->{
+                if(task != null){
+                    Log.i(TAG,"【onResume】task:"+task);
+                    taskName = task.title;
+                    needsReminder = task.needRemind;
+                    reminderTime = task.remindTime;
+                    // 更新UI
+                    tvTaskName.setText(taskName);
+                    loadReminderInfo(needsReminder, reminderTime);
+                } else {
+                    Log.i(TAG,"【onResume】task为空");}
+            });
+        }).start();
     }
-
-
 }

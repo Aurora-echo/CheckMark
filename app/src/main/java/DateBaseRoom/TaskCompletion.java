@@ -2,12 +2,11 @@ package DateBaseRoom;
 
 import androidx.room.Entity;
 import androidx.room.ForeignKey;
+import androidx.room.Index;
 import androidx.room.PrimaryKey;
 import androidx.room.TypeConverters;
 
 import java.util.Date;
-
-import DateBaseRoom.Task;
 
 /**
  * 任务完成记录实体类
@@ -20,7 +19,8 @@ import DateBaseRoom.Task;
                 parentColumns = "taskId",
                 childColumns = "taskId",
                 onDelete = ForeignKey.CASCADE
-        )
+        ),
+        indices = {@Index("taskId")} // 为外键列添加索引
 )
 @TypeConverters(Converters.class) // 应用类型转换器
 public class TaskCompletion {

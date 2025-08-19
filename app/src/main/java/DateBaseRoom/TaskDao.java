@@ -23,6 +23,14 @@ public interface TaskDao {
     @Update
     void updateTask(Task task);
 
+    //更新全部任务状态为未完成
+    @Query("UPDATE tasks SET status = 0")
+    void resetAllTaskStatus();
+
+    //更新任务状态
+    @Query("UPDATE tasks SET status = 1 WHERE taskId = :taskId")
+    void updateTaskStatus(int taskId);
+
     // 删除任务
     @Delete
     void deleteTask(Task task);
@@ -33,7 +41,10 @@ public interface TaskDao {
 
     // 根据ID获取任务
     @Query("SELECT * FROM tasks WHERE taskId = :taskId")
-    Task getTaskById(int taskId);
+    LiveData<Task> getTaskById(int taskId);
+
+    @Query("SELECT * FROM tasks WHERE taskId = :taskId")
+    Task getTaskById_Task_NotLaveData(int taskId);
 
     // 获取未完成任务
     @Query("SELECT * FROM tasks WHERE status != 2")
