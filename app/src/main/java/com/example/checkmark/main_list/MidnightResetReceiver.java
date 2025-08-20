@@ -1,3 +1,7 @@
+/**
+ * 定时重置任务的广播器
+ * */
+
 package com.example.checkmark.main_list;
 
 import android.content.BroadcastReceiver;

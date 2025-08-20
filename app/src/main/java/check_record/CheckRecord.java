@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -34,6 +35,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 
 import DateBaseRoom.AppDatabase;
@@ -54,8 +56,8 @@ public class CheckRecord extends AppCompatActivity {
     private MaterialCalendarView calendarView;
     private FloatingActionButton fabRecord;
     private ImageView ivReminderIcon;
-    private TextView tvReminderInfo, tvTaskName,tvCount,tvMonthCount,tvWeekCount;
-    private Button btnSetting;
+    private TextView tvReminderInfo, tvTaskName,tvCount,tvMonthCount,tvWeekCount,tvRandom;
+    private ImageButton btnSetting;
 
     // 数据相关
     private int  taskid;
@@ -120,6 +122,7 @@ public class CheckRecord extends AppCompatActivity {
         // 提醒信息区域
         ivReminderIcon = findViewById(R.id.iv_reminder_icon);
         tvReminderInfo = findViewById(R.id.tv_reminder_info);
+        tvRandom =findViewById(R.id.tv_ramdom);
 
         //记录完成次数按钮
         tvCount = findViewById(R.id.tv_count);
@@ -233,6 +236,7 @@ public class CheckRecord extends AppCompatActivity {
                 tvCount.setText(String.valueOf(total_Completions));
                 tvMonthCount.setText(String.valueOf(month_Completions));
                 tvWeekCount.setText(String.valueOf(week_Completions));
+                showRandomTv();
             });
         }).start();
     }
@@ -300,5 +304,108 @@ public class CheckRecord extends AppCompatActivity {
                     Log.i(TAG,"【onResume】task为空");}
             });
         }).start();
+    }
+
+    private  void showRandomTv() {
+        String[] Random_List = {
+                "坚持就是胜利，永不放弃！",
+                "每一天都是新的开始，加油！",
+                "梦想不会逃跑，会逃跑的永远是自己",
+                "努力不一定成功，但放弃一定失败",
+                "心若向阳，无畏悲伤",
+                "越努力，越幸运",
+                "行动是成功的阶梯",
+                "今天的努力，明天的实力",
+                "相信自己，你能做到",
+                "没有失败，只有暂时停止成功",
+                "路虽远，行则将至",
+                "事虽难，做则必成",
+                "只要路是对的，就不怕远",
+                "成功在于坚持，坚持就是胜利",
+                "付出总有回报，只是时间问题",
+                "机会总是留给有准备的人",
+                "做最好的自己，不负韶华",
+                "生命不息，奋斗不止",
+                "青春无悔，奋斗最美",
+                "梦想还是要有的，万一实现了",
+                "不为失败找借口，只为成功找方法",
+                "态度决定高度，习惯成就人生",
+                "细节决定成败，态度决定一切",
+                "每天进步一点点，成功离你不远",
+                "困难像弹簧，你弱它就强",
+                "不经历风雨，怎么见彩虹",
+                "失败是成功之母，总结是成功之父",
+                "心中有阳光，脚下有力量",
+                "与其临渊羡鱼，不如退而结网",
+                "世上无难事，只怕有心人",
+                "宝剑锋从磨砺出，梅花香自苦寒来",
+                "吃得苦中苦，方为人上人",
+                "不经一番寒彻骨，怎得梅花扑鼻香",
+                "山重水复疑无路，柳暗花明又一村",
+                "只要功夫深，铁杵磨成针",
+                "天生我材必有用，千金散尽还复来",
+                "长风破浪会有时，直挂云帆济沧海",
+                "千淘万漉虽辛苦，吹尽狂沙始到金",
+                "会当凌绝顶，一览众山小",
+                "欲穷千里目，更上一层楼",
+                "少壮不努力，老大徒伤悲",
+                "黑发不知勤学早，白首方悔读书迟",
+                "书山有路勤为径，学海无涯苦作舟",
+                "读书破万卷，下笔如有神",
+                "纸上得来终觉浅，绝知此事要躬行",
+                "问渠那得清如许，为有源头活水来",
+                "时间就像海绵里的水，挤挤总会有的",
+                "合理安排时间，就等于节约时间",
+                "今日事今日毕，勿将今事待明日",
+                "一寸光阴一寸金，寸金难买寸光阴",
+                "时间就是生命，时间就是速度",
+                "逝者如斯夫，不舍昼夜",
+                "光阴似箭，日月如梭",
+                "莫等闲，白了少年头，空悲切",
+                "盛年不重来，一日难再晨",
+                "及时当勉励，岁月不待人",
+                "三更灯火五更鸡，正是男儿读书时",
+                "少年易老学难成，一寸光阴不可轻",
+                "未觉池塘春草梦，阶前梧叶已秋声",
+                "花有重开日，人无再少年",
+                "明日复明日，明日何其多",
+                "我生待明日，万事成蹉跎",
+                "世人若被明日累，春去秋来老将至",
+                "朝看水东流，暮看日西坠",
+                "百年明日能几何？请君听我明日歌",
+                "志不强者智不达，言不信者行不果",
+                "志当存高远，慕先贤，绝情欲",
+                "老骥伏枥，志在千里",
+                "烈士暮年，壮心不已",
+                "燕雀安知鸿鹄之志哉",
+                "大鹏一日同风起，扶摇直上九万里",
+                "古之立大事者，不惟有超世之才",
+                "亦必有坚忍不拔之志",
+                "壮心未与年俱老，死去犹能作鬼雄",
+                "生当作人杰，死亦为鬼雄",
+                "位卑未敢忘忧国，事定犹须待阖棺",
+                "人生自古谁无死？留取丹心照汗青",
+                "千磨万击还坚劲，任尔东西南北风",
+                "粉身碎骨浑不怕，要留清白在人间",
+                "不要人夸颜色好，只留清气满乾坤",
+                "落红不是无情物，化作春泥更护花",
+                "苟利国家生死以，岂因祸福避趋之",
+                "我自横刀向天笑，去留肝胆两昆仑",
+                "横眉冷对千夫指，俯首甘为孺子牛",
+                "春蚕到死丝方尽，蜡炬成灰泪始干",
+                "衣带渐宽终不悔，为伊消得人憔悴",
+                "沉舟侧畔千帆过，病树前头万木春",
+                "山不在高，有仙则名。水不在深，有龙则灵",
+                "谈笑有鸿儒，往来无白丁",
+                "出淤泥而不染，濯清涟而不妖",
+                "路漫漫其修远兮，吾将上下而求索",
+                "亦余心之所善兮，虽九死其犹未悔",
+                "天行健，君子以自强不息",
+                "地势坤，君子以厚德载物",
+                "海纳百川，有容乃大；壁立千仞，无欲则刚",
+                "非淡泊无以明志，非宁静无以致远"
+        };
+        int randomIndex = new Random().nextInt(Random_List.length);
+        tvRandom.setText(Random_List[randomIndex]);
     }
 }

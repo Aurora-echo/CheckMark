@@ -1,3 +1,7 @@
+/**
+ * 设备重启后，仍可以调用一次onReceive方法，在onReceive方法中重新设置午夜重置任务
+ * */
+
 package com.example.checkmark.main_list;
 
 import android.content.BroadcastReceiver;
