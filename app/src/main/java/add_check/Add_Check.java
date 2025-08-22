@@ -20,6 +20,7 @@ import com.google.android.material.textfield.TextInputEditText;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,51 +31,42 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import DateBaseRoom.AppDatabase;
+import DateBaseRoom.Task;
+import DateBaseRoom.TaskDao;
+
 public class Add_Check extends AppCompatActivity {
 
     private TextInputEditText etTaskName;
     private CheckBox cbDailyReminder;
     private LinearLayout layoutTimePicker;
     private Button btnSelectTime;
-    private TextView tvSelectedTime,tvTitleName;
+    private TextView tvSelectedTime;
     private Button btnConfirm;
-
-    private SharedPreferences sp;
-    private static final String SP_NAME = "CheckListInfo";
-    private static final String TASKS_KEY = "tasks";
     private static final String TAG = "Log.Add_Check";
-    private int clickCount = 0; //点击计时器
-
+    private TaskDao taskDao;
+    private AppDatabase db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add_check);
 
-        // 初始化SharedPreferences
-        sp = getSharedPreferences(SP_NAME, MODE_PRIVATE);
-
-        // 初始化视图
+        //任务名称输入框
         etTaskName = findViewById(R.id.et_task_name);
+        //每日提醒勾选框
         cbDailyReminder = findViewById(R.id.cb_daily_reminder);
+        //时间选择器
         layoutTimePicker = findViewById(R.id.layout_time_picker);
+        //时间选择按钮
         btnSelectTime = findViewById(R.id.btn_select_time);
-        tvSelectedTime = findViewById(R.id.tv_selected_time);
-        btnConfirm = findViewById(R.id.btn_confirm);
-        tvTitleName = findViewById(R.id.tv_card_title);
 
-        //tvTitleName的点击事件，连续点击五次，触发导入数据
-        tvTitleName.setOnClickListener(v -> {
-            clickCount++;
-            if (clickCount >= 5) {
-                clickCount = 0;
-                loadTask();
-                Toast.makeText(this, "开始导入数据", Toast.LENGTH_SHORT).show();
-            } else {
-                // 3秒内不继续点击就重置计数器
-                tvTitleName.postDelayed(() -> clickCount = 0, 3000);
-            }
-        });
+        tvSelectedTime = findViewById(R.id.tv_selected_time);
+        //提交按钮
+        btnConfirm = findViewById(R.id.btn_confirm);
+
+        db = AppDatabase.getInstance(this);
+        taskDao = db.taskDao();
 
         // “每日未完成提醒”勾选框状态变化监听
         cbDailyReminder.setOnCheckedChangeListener((buttonView, isChecked) -> {
@@ -111,151 +103,31 @@ public class Add_Check extends AppCompatActivity {
             Toast.makeText(this, "请正确填写任务名称", Toast.LENGTH_SHORT).show();
             return;
         }
-
         boolean needsReminder = cbDailyReminder.isChecked();
-        String reminderTime = needsReminder ? tvSelectedTime.getText().toString() : "";
+        String timeStr = tvSelectedTime.getText().toString(); // 获取显示的 "HH:mm" 格式字符串
+        Date reminderTime = null;
+        try{
+            SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.getDefault());
+            reminderTime = sdf.parse(timeStr); // 将字符串解析为 Date 对象，这句话需要try...catch...
+        } catch (ParseException e) {
+            Log.e(TAG, "时间格式解析失败：" + timeStr, e);
+        }
         Log.i(TAG, "needsReminder: " + needsReminder);
         Log.i(TAG, "reminderTime: " + reminderTime);
         // 检查是否需要提醒但未选择时间
-        if (needsReminder && reminderTime.isEmpty()) {
+        if (needsReminder && reminderTime == null) {
             Toast.makeText(this, "不是说要提醒吗，时间呢？", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        // 创建任务对象
-        Map<String, Object> task = new HashMap<>();
-        task.put("id",getNextTaskId(this));
-        task.put("name", taskName);
-        task.put("needsReminder", needsReminder);
-        task.put("reminderTime", reminderTime);
-        task.put("completionRecords", new ArrayList<String>());
-
-        // 获取现有任务列表
-        List<Map<String, Object>> tasks = getTasksFromSharedPreferences();
-        tasks.add(task);
-
-        // 保存到SharedPreferences
-        saveTasksToSharedPreferences(tasks);
-
-        // 保存数据成功后
-        Intent resultIntent = new Intent();
-        setResult(RESULT_OK, resultIntent);  // 必须设置RESULT_OK
-        Toast.makeText(this, "事件已记录", Toast.LENGTH_SHORT).show();
-        finish();
+        //插入新任务
+        Task task = new Task(taskName,needsReminder,reminderTime);
+        new Thread(() -> {
+            taskDao.insertTask(task);
+            runOnUiThread(() -> {
+                Toast.makeText(this, "任务已新建成功", Toast.LENGTH_SHORT).show();
+                finish();
+            });
+        }).start();
     }
-
-    private List<Map<String, Object>> getTasksFromSharedPreferences() {
-        String tasksJson = sp.getString(TASKS_KEY, "[]");
-        Type type = new TypeToken<List<Map<String, Object>>>(){}.getType();
-        return new Gson().fromJson(tasksJson, type);
-    }
-
-    private void saveTasksToSharedPreferences(List<Map<String, Object>> tasks) {
-        String tasksJson = new Gson().toJson(tasks);
-        sp.edit().putString(TASKS_KEY, tasksJson).apply();
-    }
-
-    // 添加完成记录的方法（可在其他地方调用）
-    public static void addCompletionRecord(SharedPreferences sp, int taskIndex) {
-        List<Map<String, Object>> tasks = new Gson().fromJson(
-                sp.getString(TASKS_KEY, "[]"),
-                new TypeToken<List<Map<String, Object>>>(){}.getType()
-        );
-
-        if (taskIndex >= 0 && taskIndex < tasks.size()) {
-            Map<String, Object> task = tasks.get(taskIndex);
-            List<String> records = (List<String>) task.get("completionRecords");
-            if (records == null) {
-                records = new ArrayList<>();
-            }
-
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
-            records.add(sdf.format(new Date()));
-
-            task.put("completionRecords", records);
-            new Gson().toJson(tasks);
-            sp.edit().putString(TASKS_KEY, new Gson().toJson(tasks)).apply();
-        }
-    }
-
-    public synchronized int getNextTaskId(Context context) {
-        SharedPreferences sp = context.getSharedPreferences("task_ids", MODE_PRIVATE);
-        int id = sp.getInt("last_id", 0) + 1;
-        sp.edit().putInt("last_id", id).apply();
-        return id;
-    }
-
-    /**
-     * 导入原始数据的方法
-     * */
-    private void loadTask(){
-        List<Map<String, Object>> testTasks = new ArrayList<>();
-
-        // 任务1：吃维生素（有提醒）
-        Map<String, Object> task1 = new HashMap<>();
-        task1.put("id", getNextTaskId(this));
-        task1.put("name", "吃维生素");
-        task1.put("needsReminder", true);
-        task1.put("reminderTime", "21:00");
-        task1.put("completionRecords", Arrays.asList(
-                "2025-06-17 15:13:15", "2025-06-18 14:18:48", "2025-06-19 15:02:55",
-                "2025-06-20 14:12:58", "2025-06-21 23:55:38", "2025-06-22 23:02:09",
-                "2025-06-23 13:30:19", "2025-06-24 13:44:22", "2025-06-25 13:55:45",
-                "2025-06-26 15:58:15", "2025-06-27 08:53:54", "2025-06-29 14:59:59",
-                "2025-06-30 21:13:19", "2025-07-01 14:37:26", "2025-07-02 18:07:43",
-                "2025-07-03 14:07:37", "2025-07-04 11:42:56", "2025-07-06 17:25:17",
-                "2025-07-07 09:07:26", "2025-07-08 13:39:37", "2025-07-09 14:06:02",
-                "2025-07-10 13:33:56", "2025-07-11 13:48:56","2025-07-14 13:48:56",
-                "2025-07-15 13:48:56","2025-07-16 13:48:56","2025-07-17 13:48:56",
-                "2025-07-18 13:48:56","2025-07-19 13:48:56","2025-07-20 13:48:56",
-                "2025-07-21 13:48:56","2025-07-22 13:48:56","2025-07-23 13:48:56",
-                "2025-07-24 13:48:56","2025-07-25 13:48:56","2025-07-26 13:48:56",
-                "2025-07-27 13:48:56","2025-07-28 13:48:56","2025-07-29 13:48:56",
-                "2025-07-30 13:48:56","2025-07-31 13:48:56","2025-08-01 13:48:56",
-                "2025-08-03 13:48:56","2025-08-04 13:48:56","2025-08-05 13:48:56",
-                "2025-08-06 13:48:56","2025-08-07 13:48:56"
-        ));
-        testTasks.add(task1);
-
-        // 任务2：运动（无提醒）
-        Map<String, Object> task2 = new HashMap<>();
-        task2.put("id", getNextTaskId(this));
-        task2.put("name", "运动");
-        task2.put("needsReminder", false);
-        task2.put("reminderTime", "");
-        task2.put("completionRecords", Arrays.asList(
-                "2025-06-26 15:58:21", "2025-07-02 18:07:49", "2025-07-03 16:59:12",
-                "2025-07-04 16:45:54", "2025-07-06 23:14:33", "2025-07-10 15:41:21"
-        ));
-        testTasks.add(task2);
-
-        // 任务3：放松（无提醒）
-        Map<String, Object> task3 = new HashMap<>();
-        task3.put("id", getNextTaskId(this));
-        task3.put("name", "喝瑞幸");
-        task3.put("needsReminder", false);
-        task3.put("reminderTime", "");
-        task3.put("completionRecords", Arrays.asList(
-                "2025-06-22 23:02:05", "2025-06-30 21:13:24", "2025-07-06 23:14:37",
-                "2025-08-06 00:14:37", "2025-07-30 23:14:37", "2025-07-13 23:14:37",
-                "2025-07-20 23:14:37", "2025-07-27 23:14:37"
-        ));
-        testTasks.add(task3);
-
-        // 保存测试数据
-        saveTasksToSharedPreferences(testTasks);
-
-        Toast.makeText(this, "原始数据已导入", Toast.LENGTH_SHORT).show();
-
-        // 打印验证数据
-        Log.d(TAG, "当前任务数: " + testTasks.size());
-        for (Map<String, Object> task : testTasks) {
-            Log.d(TAG, String.format(Locale.getDefault(),
-                    "任务: %s (ID:%d), 完成次数: %d",
-                    task.get("name"),
-                    ((Number)task.get("id")).intValue(),
-                    ((List<?>)task.get("completionRecords")).size()));
-        }
-    }
-
 }

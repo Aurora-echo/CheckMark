@@ -50,4 +50,7 @@ dependencies {
     implementation("androidx.cardview:cardview:1.0.0")
     implementation("com.prolificinteractive:material-calendarview:1.4.3")
 
+    implementation("androidx.room:room-runtime:2.4.3")
+    annotationProcessor("androidx.room:room-compiler:2.4.3")
+
 }
