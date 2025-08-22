@@ -67,7 +67,7 @@ public class MainList extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_main_list);
-        Log.d(TAG, "Activity创建");
+        Log.d(TAG, "【onCreate】Activity创建");
 
         requestNotificationPermission(); // 检查通知权限
         requestAutoStartPermission();   // 检查自启动权限
@@ -112,6 +112,7 @@ public class MainList extends AppCompatActivity {
      * 原理：Android 12+需要特殊权限才能设置精确闹钟
      */
     private void checkExactAlarmPermission() {
+        Log. i(TAG, "【checkExactAlarmPermission】检查精确闹钟权限");
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             AlarmManager alarmManager = (AlarmManager) getSystemService(ALARM_SERVICE);
             if (!alarmManager.canScheduleExactAlarms()) {
@@ -154,7 +155,6 @@ public class MainList extends AppCompatActivity {
     /**
      * 打开任务详情页面
      * @param position 列表中的位置索引
-
      */
     private void openCheckRecord(int position) {
         // 打印调用栈，用于调试（原有代码保留）
@@ -188,7 +188,7 @@ public class MainList extends AppCompatActivity {
      * 显示完成状态提示
      */
     private void showCompletionStatus(int position) {
-        String message = CheckList.get(position).isCompleted() ? "当日已完成~" : "今天还没完成哦~";
+        String message = CheckList.get(position).isCompleted() ? "当日已完成" : "今天还没完成";
         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
     }
 
@@ -206,7 +206,6 @@ public class MainList extends AppCompatActivity {
         for (Task task : allTasks) {
             // 获取任务ID
             int id = task.taskId;
-            // 检查今日是否完成
             //该处有问题，需要修改，Task表不会改变status状态
             boolean isCompletedToday = (task.status==0) ? false:true ;
             // 添加到列表
@@ -225,8 +224,9 @@ public class MainList extends AppCompatActivity {
      */
     private void scheduleAllReminders() {
         for (Task task : allTasks) {
-            //有needsReminder字段且值为true时，设置闹钟
-            if (task.needRemind) {
+            //有needsReminder字段且值为true时 + status状态为0（未完成的）——> 任务设置闹钟
+            if (task.needRemind && task.status == 0) {
+                Log.i(TAG,"【scheduleAllReminders】找到需要提醒的任务，taskId：" + task.taskId+",taskname:"+task.title);
                 if (task.taskId != -1 && task.title != null && task.remindTime != null) {
                     ReminderService.setExactAlarm(this, task.taskId, task.title, task.remindTime);
                 }
@@ -238,14 +238,14 @@ public class MainList extends AppCompatActivity {
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         if (requestCode == 1 && resultCode == RESULT_OK) {
-            Log.i(TAG, "onActivityResult: 返回，执行刷新页面");
+            Log.i(TAG, "【onActivityResult】onActivityResult: 返回，执行刷新页面");
             loadTasksFromDatabase(); // 刷新列表
         }
     }
 
     @Override
     protected void onResume() {
-        Log.i(TAG, "【MainList.onResume】 执行，取消所有提醒，重新设置所有提醒");
+        Log.i(TAG, "【onResume】 执行，取消所有提醒，重新设置所有提醒");
         super.onResume();
         if(!allTasks.isEmpty()){
             cancelAllReminders();
@@ -281,6 +281,7 @@ public class MainList extends AppCompatActivity {
      * 引导用户去配置通知权限
      * */
     private void requestNotificationPermission() {
+        Log.d(TAG, "【requestNotificationPermission】检查通知权限");
         if (!areNotificationsEnabled()) {
             new AlertDialog.Builder(this)
                     .setTitle("开启通知权限")
@@ -293,14 +294,16 @@ public class MainList extends AppCompatActivity {
                     })
                     .setNegativeButton("取消", null)
                     .show();
+        }else{
+            Log.d(TAG, "【requestNotificationPermission】通知权限已打开");
         }
     }
-
 
     /**
      * 引导用户开始自启动
      * */
     private void requestAutoStartPermission() {
+        Log.d(TAG, "【requestAutoStartPermission】检查自启动权限");
         String manufacturer = Build.MANUFACTURER.toLowerCase();
         if (manufacturer.contains("huawei") || manufacturer.contains("xiaomi") || manufacturer.contains("oppo")) {
             new AlertDialog.Builder(this)
@@ -331,6 +334,7 @@ public class MainList extends AppCompatActivity {
      * 0点重置所有任务状态
      * */
     public static void scheduleMidnightReset(Context context) {
+        Log.i(TAG,"【scheduleMidnightReset】0点重置所有任务状态定时任务");
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         Intent intent = new Intent(context, MidnightResetReceiver.class);
         PendingIntent pendingIntent = PendingIntent.getBroadcast(
@@ -376,6 +380,7 @@ public class MainList extends AppCompatActivity {
      * 取消可能存在的旧的定时任务，用于设置新任务前执行
      * */
     public static void cancelMidnightReset(Context context) {
+        Log.i(TAG,"【requestAutoStartPermission】取消之前的任务");
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         Intent intent = new Intent(context, MidnightResetReceiver.class);
         PendingIntent pendingIntent = PendingIntent.getBroadcast(

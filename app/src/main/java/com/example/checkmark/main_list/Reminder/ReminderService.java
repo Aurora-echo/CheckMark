@@ -71,7 +71,7 @@ public class ReminderService extends BroadcastReceiver {
                 Log.d(TAG, "【onReceive】收到提醒: 任务ID=" + taskId + ", 名称=" + taskName);
 
                 // 4. 使用NotificationHelper发送通知
-                String message = "今天"+ taskName+"任务有没有完成！不要忘记了！";
+                String message = taskName+" 任务还没有完成！不要忘记了！";
                 NotificationHelper.sendReminderNotification(context, taskId, taskName, message);
 
                 // 5. 如果需要重复提醒，设置第二天的闹钟
@@ -83,7 +83,7 @@ public class ReminderService extends BroadcastReceiver {
                 }
             }
         } catch (Exception e) {
-            Log.e(TAG,"发送通知出错："+e.getMessage());
+            Log.e(TAG,"【onReceive】发送通知出错："+e.getMessage());
         }
     }
 
@@ -98,7 +98,7 @@ public class ReminderService extends BroadcastReceiver {
      */
     public static void setExactAlarm(Context context, int taskId, String taskName, Date reminderTime) {
         // 1. 记录方法调用日志
-        Log.i(TAG, "【setExactAlarm】开始设置闹钟 - 任务ID:" + taskId + ", 任务名称:" + taskName +
+        Log.i(TAG, "【setExactAlarm】开始设置闹钟。任务ID:" + taskId + ", 任务名称:" + taskName +
                 ", 原始提醒时间:" + reminderTime);
 
         // 2. 参数有效性检查
@@ -225,64 +225,5 @@ public class ReminderService extends BroadcastReceiver {
             pi.cancel();    // 取消PendingIntent
             Log.d(TAG, "已取消提醒: " + taskId);
         }
-    }
-
-    /**
-     * 解析时间字符串(HH:mm)为Calendar对象
-     *
-     * @param time 时间字符串(HH:mm格式)
-     * @return 包含设置时间的Calendar对象
-     * @throws Exception 时间格式错误时抛出
-     */
-    private static Calendar parseTime(String time) throws Exception {
-        // 1. 分割小时和分钟
-        String[] parts = time.split(":");
-        int hour = Integer.parseInt(parts[0]);
-        int minute = Integer.parseInt(parts[1]);
-
-        // 2. 获取当前时间的Calendar实例
-        Calendar calendar = Calendar.getInstance();
-
-        // 3. 设置指定的小时和分钟
-        calendar.set(Calendar.HOUR_OF_DAY, hour);
-        calendar.set(Calendar.MINUTE, minute);
-        calendar.set(Calendar.SECOND, 0);
-        calendar.set(Calendar.MILLISECOND, 0);
-
-        // 4. 如果设置的时间已过去，则设置为明天同一时间
-        if (calendar.getTimeInMillis() <= System.currentTimeMillis()) {
-            calendar.add(Calendar.DAY_OF_YEAR, 1);
-        }
-
-        return calendar;
-    }
-
-    /**
-     * 创建点击系统闹钟时打开应用的Intent
-     */
-    private static PendingIntent getOpenAppIntent(Context context) {
-        // 创建打开MainList的Intent
-        Intent intent = new Intent(context, MainList.class);
-        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-
-        return PendingIntent.getActivity(
-                context,
-                0, // 固定请求码
-                intent,
-                PendingIntent.FLAG_IMMUTABLE);
-    }
-
-    /**
-     * 从任务Map中安全获取任务ID
-     */
-    private int getTaskId(Map<String, Object> task) {
-        try {
-            Object idObj = task.get("id");
-            if (idObj instanceof Double) return ((Double) idObj).intValue();
-            if (idObj instanceof Integer) return (Integer) idObj;
-        } catch (Exception e) {
-            Log.e(TAG, "获取任务ID出错", e);
-        }
-        return -1;
     }
 }

@@ -85,10 +85,12 @@ public class CheckRecord extends AppCompatActivity {
 
         // 初始化视图
         initViews();
-        // 获取Intent数据
-        getShowData();
-        // 加载数据（优先使用Intent传递的预加载数据）
-        loadData();
+
+        // 获取Intent数据,回调函数，getShowData()调用完成再回来执行loadData()
+        getShowData(() ->{
+            // 加载数据（优先使用Intent传递的预加载数据）
+            loadData();
+        });
     }
 
     /**
@@ -143,7 +145,7 @@ public class CheckRecord extends AppCompatActivity {
     /**
      * 获取Intent传递的数据
      */
-    private void getShowData() {
+    private void getShowData(Runnable onDataLoaded) {
         //获取任务名称（从intent）
         taskName = getIntent().getStringExtra("taskName");
         //获取任务的id
@@ -161,6 +163,8 @@ public class CheckRecord extends AppCompatActivity {
         //从数据库获取任务完成记录
         new Thread(() ->{
             taskCompletionTimes = completionDao.getCompletionTimesForTask(taskid);
+            Log.i(TAG,"【getShowData】taskCompletionTimes = "+taskCompletionTimes);
+            runOnUiThread(onDataLoaded);
         }).start();
     }
 
