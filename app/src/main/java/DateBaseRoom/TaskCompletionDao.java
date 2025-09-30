@@ -51,4 +51,17 @@ public interface TaskCompletionDao {
     // 获取任务的完成时间列表
     @Query("SELECT completedAt FROM task_completions WHERE taskId = :taskId ORDER BY completedAt DESC")
     List<Date> getCompletionTimesForTask(int taskId);
+
+    /**
+     * 查询指定任务在指定时间范围内的完成记录
+     * 这是一个数据库查询方法，使用SQL语句
+     *
+     * @param taskId 要查询的任务ID
+     * @param startTime 查询开始时间
+     * @param endTime 查询结束时间
+     * @return 完成记录列表
+     */
+    @Query("SELECT * FROM task_completions WHERE taskId = :taskId AND completedAt BETWEEN :startTime AND :endTime")
+    List<TaskCompletion> getCompletionsForTaskInTimeRange(int taskId, Date startTime, Date endTime);
+
 }

@@ -35,6 +35,10 @@ public interface TaskDao {
     @Delete
     int deleteTask(Task task);
 
+    //获取所有任务，非LiveData
+    @Query("SELECT * FROM tasks")
+    List<Task> getAllTasks_onceTime();
+
     // 获取所有任务
     @Query("SELECT * FROM tasks")
     LiveData<List<Task>> getAllTasks();

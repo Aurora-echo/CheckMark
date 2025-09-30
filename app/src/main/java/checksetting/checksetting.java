@@ -190,6 +190,7 @@ public class checksetting extends AppCompatActivity {
             if(deleterow > 0){
                 runOnUiThread(() -> {
                     Toast.makeText(this, "删除成功", Toast.LENGTH_SHORT).show();
+                    setResult(RESULT_OK);
                     finish();
                 });
             } else {

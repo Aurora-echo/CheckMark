@@ -1,28 +1,119 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    桌面小部件布局文件
+    这个文件定义了小部件在桌面上显示的样子
+    注意：小部件只能使用特定的布局和视图组件
+-->
+
+<!--
+    LinearLayout - 线性布局
+    这是小部件的根布局，它会包含所有其他视图
+    android:orientation="vertical" - 子视图垂直排列（从上到下）
+    android:background="@drawable/widget_background" - 设置背景，可以是颜色或形状
+    android:padding="8dp" - 内边距，让内容不会紧贴边缘
+-->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_background"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:gravity="center"
-    android:padding="8dp">
+    android:background="@drawable/widget_background"
+    android:padding="8dp"
+    android:gravity="center">
 
+    <!--
+        LinearLayout - 另一个线性布局，用于水平排列任务名称和完成状态
+        android:orientation="horizontal" - 子视图水平排列（从左到右）
+        android:layout_width="match_parent" - 宽度填满父布局
+        android:layout_height="wrap_content" - 高度根据内容自动调整
+        android:gravity="center_vertical" - 子视图在垂直方向上居中对齐
+    -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <!--
+            TextView - 文本视图，用于显示任务名称
+            android:id="@+id/task_name" - 唯一ID，在Java代码中通过这个ID找到这个视图
+            android:layout_width="0dp" - 宽度为0，配合layout_weight使用
+            android:layout_height="wrap_content" - 高度根据文字内容自动调整
+            android:layout_weight="1" - 权重为1，表示它会占据剩余的所有水平空间
+            android:text="任务名称" - 默认显示的文字（实际运行时会用Java代码替换）
+            android:textSize="16sp" - 文字大小，sp是缩放像素，会根据系统字体设置调整
+            android:textColor="@color/black" - 文字颜色
+            android:maxLines="1" - 最多显示1行文字
+            android:ellipsize="end" - 如果文字太长，在结尾显示省略号（...）
+            android:textStyle="bold" - 文字样式为粗体
+        -->
+        <TextView
+            android:id="@+id/task_name"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="任务名称"
+            android:textSize="16sp"
+            android:textColor="@color/black"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:textStyle="bold" />
+
+        <!--
+            TextView - 另一个文本视图，用于显示完成状态（✓或空）
+            android:id="@+id/completion_status" - 唯一ID
+            android:layout_width="wrap_content" - 宽度根据内容自动调整
+            android:layout_height="wrap_content" - 高度根据内容自动调整
+            android:text="○" - 默认显示圆圈（实际运行时会用Java代码替换）
+            android:textSize="20sp" - 文字稍大一些，让对勾更明显
+            android:textColor="@color/green" - 文字颜色为绿色
+            android:layout_marginStart="8dp" - 左边距8dp，与任务名称分开一些
+            android:textStyle="bold" - 粗体显示
+        -->
+        <TextView
+            android:id="@+id/completion_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="○"
+            android:textSize="20sp"
+            android:textColor="@color/green"
+            android:layout_marginStart="8dp"
+            android:textStyle="bold" />
+
+    </LinearLayout>
+
+    <!--
+        View - 分隔线，用于在任务名称和日期之间添加视觉分隔
+        android:layout_width="match_parent" - 宽度填满父布局
+        android:layout_height="1dp" - 高度只有1像素，很细的一条线
+        android:background="@color/gray" - 背景颜色为灰色
+        android:layout_marginTop="4dp" - 上边距4dp，与上面的内容分开
+        android:layout_marginBottom="4dp" - 下边距4dp，与下面的内容分开
+    -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/gray"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="4dp" />
+
+    <!--
+        TextView - 显示日期的文本视图
+        android:id="@+id/current_date" - 唯一ID
+        android:layout_width="wrap_content" - 宽度根据内容自动调整
+        android:layout_height="wrap_content" - 高度根据内容自动调整
+        android:text="今天" - 默认显示"今天"（实际可以显示具体日期）
+        android:textSize="12sp" - 文字较小，作为辅助信息
+        android:textColor="@color/gray" - 文字颜色为灰色，不那么显眼
+        android:layout_gravity="end" - 在父布局中靠右对齐
+    -->
     <TextView
-        android:id="@+id/task_name"
+        android:id="@+id/current_date"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="今日事项"
-        android:textSize="14sp"
-        android:maxLines="1"
-        android:ellipsize="end"
-        android:textColor="#000000"/>
+        android:text="今天"
+        android:textSize="12sp"
+        android:textColor="@color/gray"
+        android:layout_gravity="end" />
 
-    <TextView
-        android:id="@+id/completion_status"
-        android:layout_width="60dp"
-        android:layout_height="60dp"
-        android:textSize="40sp"
-        android:gravity="center"
-        android:text="☑️"
-        android:layout_marginTop="4dp"/>
 </LinearLayout>

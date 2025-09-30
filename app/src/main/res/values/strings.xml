@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">CheckMark</string>
+
+    <!-- 桌面小部件的描述，会在用户添加小部件时显示 -->
+    <string name="widget_description">展示当前的任务完成情况</string>
+    <string name="widget_title">任务状态</string>
 </resources>

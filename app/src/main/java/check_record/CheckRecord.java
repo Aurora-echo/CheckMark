@@ -73,6 +73,7 @@ public class CheckRecord extends AppCompatActivity {
     //任务完成日期列表数组
     List<Date> taskCompletionTimes;
     private DateUtils dateUtils = new DateUtils();
+    private static final int REQUEST_CODE_DELETE = 1001;  //记录从设置页删除回来的情况
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -89,7 +90,7 @@ public class CheckRecord extends AppCompatActivity {
         // 获取Intent数据,回调函数，getShowData()调用完成再回来执行loadData()
         getShowData(() ->{
             // 加载数据（优先使用Intent传递的预加载数据）
-            loadData();
+            Log.i(TAG, "数据加载完成，函数被顺利回调。");
         });
     }
 
@@ -115,7 +116,7 @@ public class CheckRecord extends AppCompatActivity {
                 long long_reminderTime = reminderTime.getTime();
                 intent.putExtra("long_reminderTime", long_reminderTime);   // 提醒时间(可能为null)
             }
-            startActivity(intent);
+            startActivityForResult(intent,REQUEST_CODE_DELETE);
         });
 
         // 任务名称
@@ -164,7 +165,13 @@ public class CheckRecord extends AppCompatActivity {
         new Thread(() ->{
             taskCompletionTimes = completionDao.getCompletionTimesForTask(taskid);
             Log.i(TAG,"【getShowData】taskCompletionTimes = "+taskCompletionTimes);
-            runOnUiThread(onDataLoaded);
+            runOnUiThread(() -> {
+                // 在这里直接处理数据，确保数据已经加载完成
+                loadData();
+                if (onDataLoaded != null) {
+                    onDataLoaded.run();
+                }
+            });
         }).start();
     }
 
@@ -411,5 +418,14 @@ public class CheckRecord extends AppCompatActivity {
         };
         int randomIndex = new Random().nextInt(Random_List.length);
         tvRandom.setText(Random_List[randomIndex]);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_CODE_DELETE && resultCode == RESULT_OK) {
+            // 删除成功，finish详情页
+            finish();
+        }
     }
 }

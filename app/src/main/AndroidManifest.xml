@@ -59,13 +59,18 @@
             android:exported="false"
             android:foregroundServiceType="specialUse" />
 
+        <!-- 在 application 标签内添加 -->
         <receiver
             android:name="LittleApp.TaskWidget"
-            android:exported="false">
+            android:exported="true"
+            android:label="@string/widget_title">
+
             <intent-filter>
+                <!-- 声明这是一个App Widget -->
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
 
+            <!-- 小部件配置信息 -->
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/task_widget_info" />
